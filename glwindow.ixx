@@ -1,20 +1,21 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-#ifndef GLWIDGET_H
-#define GLWIDGET_H
+module;
 
 #include "logo.h"
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QVector3D>
 
+export module GlWindow;
+
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
 QT_FORWARD_DECLARE_CLASS(QOpenGLBuffer)
 QT_FORWARD_DECLARE_CLASS(QOpenGLVertexArrayObject)
 
-class GLWindow : public QOpenGLWindow {
+export class GLWindow : public QOpenGLWindow {
     Q_OBJECT
     Q_PROPERTY(float z READ z WRITE setZ)
     Q_PROPERTY(float r READ r WRITE setR)
@@ -57,5 +58,3 @@ private:
     float m_r = 0;
     float m_r2 = 0;
 };
-
-#endif

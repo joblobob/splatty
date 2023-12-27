@@ -1,7 +1,7 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-module;
+#include "glwindow.h"
 
 #include <QImage>
 #include <QOpenGLBuffer>
@@ -13,8 +13,6 @@ module;
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
 #include <QTimer>
-
-module GlWindow;
 
 GLWindow::GLWindow()
 {
@@ -92,37 +90,59 @@ void GLWindow::setR2(float v)
     update();
 }
 
-static const char* vertexShaderSource = "layout(location = 0) in vec4 vertex;\n"
-                                        "layout(location = 1) in vec3 normal;\n"
-                                        "out vec3 vert;\n"
-                                        "out vec3 vertNormal;\n"
-                                        "out vec3 color;\n"
-                                        "uniform mat4 projMatrix;\n"
-                                        "uniform mat4 camMatrix;\n"
-                                        "uniform mat4 worldMatrix;\n"
-                                        "uniform mat4 myMatrix;\n"
-                                        "uniform sampler2D sampler;\n"
-                                        "void main() {\n"
-                                        "   ivec2 pos = ivec2(gl_InstanceID % 32, gl_InstanceID / 32);\n"
-                                        "   vec2 t = vec2(float(-16 + pos.x) * 0.8, float(-18 + pos.y) * 0.6);\n"
-                                        "   float val = 2.0 * length(texelFetch(sampler, pos, 0).rgb);\n"
-                                        "   mat4 wm = myMatrix * mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, t.x, t.y, val, 1) * worldMatrix;\n"
-                                        "   color = texelFetch(sampler, pos, 0).rgb * vec3(0.4, 1.0, 0.0);\n"
-                                        "   vert = vec3(wm * vertex);\n"
-                                        "   vertNormal = mat3(transpose(inverse(wm))) * normal;\n"
-                                        "   gl_Position = projMatrix * camMatrix * wm * vertex;\n"
+static const char* vertexShaderSource = "#extension GL_ARB_shading_language_packing : enable\n"
+                                        "uniform highp usampler2D u_texture;\n"
+                                        "uniform mat4 projection, view;\n"
+                                        "uniform vec2 focal;\n"
+                                        "uniform vec2 viewport;\n"
+                                        "in vec2 position;\n"
+                                        "in int index;\n"
+                                        "out vec4 vColor;\n"
+                                        "out vec2 vPosition;\n"
+                                        "void main () {\n"
+                                        " uvec4 cen = texelFetch(u_texture, ivec2((uint(index) & 0x3ffu) << 1, uint(index) >> 10), 0);\n"
+                                        "  vec4 cam = view * vec4(uintBitsToFloat(cen.xyz), 1);\n"
+                                        "  vec4 pos2d = projection * cam;\n"
+                                        "  highp float clip = 1.2 * pos2d.w;\n"
+                                        "  if (pos2d.z < -clip || pos2d.x < -clip || pos2d.x > clip || pos2d.y < -clip || pos2d.y > clip) {\n"
+                                        "    gl_Position = vec4(0.0, 0.0, 2.0, 1.0);\n"
+                                        "    return;\n"
+                                        "  }\n"
+                                        "  uvec4 cov = texelFetch(u_texture, ivec2(((uint(index) & 0x3ffu) << 1) | 1u, uint(index) >> 10), 0);\n"
+                                        "  vec2 u1 = unpackHalf2x16(cov.x), u2 = unpackHalf2x16(cov.y), u3 = unpackHalf2x16(cov.z);\n"
+                                        "  mat3 Vrk = mat3(u1.x, u1.y, u2.x, u1.y, u2.y, u3.x, u2.x, u3.x, u3.y);\n"
+                                        "  mat3 J = mat3(\n"
+                                        "      focal.x / cam.z, 0., -(focal.x * cam.x) / (cam.z * cam.z), \n"
+                                        "      0., -focal.y / cam.z, (focal.y * cam.y) / (cam.z * cam.z), \n"
+                                        "      0., 0., 0.\n"
+                                        "      );\n"
+                                        "  mat3 T = transpose(mat3(view)) * J;\n"
+                                        "  mat3 cov2d = transpose(T) * Vrk * T;\n"
+                                        "  float mid = (cov2d[0][0] + cov2d[1][1]) / 2.0;\n"
+                                        "  float radius = length(vec2((cov2d[0][0] - cov2d[1][1]) / 2.0, cov2d[0][1]));\n"
+                                        "  float lambda1 = mid + radius, lambda2 = mid - radius;\n"
+                                        "  if(lambda2 < 0.0) return;\n"
+                                        "  vec2 diagonalVector = normalize(vec2(cov2d[0][1], lambda1 - cov2d[0][0]));\n"
+                                        "  vec2 majorAxis = min(sqrt(2.0 * lambda1), 1024.0) * diagonalVector;\n"
+                                        "  vec2 minorAxis = min(sqrt(2.0 * lambda2), 1024.0) * vec2(diagonalVector.y, -diagonalVector.x);\n"
+                                        "  vColor = clamp(pos2d.z/pos2d.w+1.0, 0.0, 1.0) * vec4((cov.w) & 0xffu, (cov.w >> 8) & 0xffu, (cov.w >> 16) & 0xffu, (cov.w >> 24) & 0xffu) / 255.0;\n"
+                                        "  vPosition = position;\n"
+                                        "  vec2 vCenter = vec2(pos2d) / pos2d.w;\n"
+                                        "  gl_Position = vec4(\n"
+                                        "      vCenter \n"
+                                        "	  + position.x * majorAxis / viewport \n"
+                                        "	  + position.y * minorAxis / viewport, 0.0, 1.0);\n"
                                         "}\n";
+;
 
-static const char* fragmentShaderSource = "in highp vec3 vert;\n"
-                                          "in highp vec3 vertNormal;\n"
-                                          "in highp vec3 color;\n"
+static const char* fragmentShaderSource = "in highp vec4 vColor;\n"
+                                          "in highp vec2 vPosition;\n"
                                           "out highp vec4 fragColor;\n"
-                                          "uniform highp vec3 lightPos;\n"
-                                          "void main() {\n"
-                                          "   highp vec3 L = normalize(lightPos - vert);\n"
-                                          "   highp float NL = max(dot(normalize(vertNormal), L), 0.0);\n"
-                                          "   highp vec3 col = clamp(color * 0.2 + color * 0.8 * NL, 0.0, 1.0);\n"
-                                          "   fragColor = vec4(col, 1.0);\n"
+                                          "void main () {\n"
+                                          "  highp float A = -dot(vPosition, vPosition);\n"
+                                          "  if (A < -4.0) discard;\n"
+                                          "  highp float B = exp(A) * vColor.a;\n"
+                                          "  fragColor = vec4(B * vColor.rgb, B);\n"
                                           "}\n";
 
 QByteArray versionedShaderCode(const char* src)
@@ -141,11 +161,6 @@ QByteArray versionedShaderCode(const char* src)
 void GLWindow::initializeGL()
 {
     QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
-
-    QImage img(":/qtlogo.png");
-    Q_ASSERT(!img.isNull());
-    delete m_texture;
-    m_texture = new QOpenGLTexture(img.scaled(32, 36).mirrored());
 
     delete m_program;
     m_program = new QOpenGLShaderProgram;
@@ -172,7 +187,7 @@ void GLWindow::initializeGL()
     m_vbo = new QOpenGLBuffer;
     m_vbo->create();
     m_vbo->bind();
-    m_vbo->allocate(m_logo.constData(), m_logo.count() * sizeof(GLfloat));
+    //m_vbo->allocate(m_logo.constData(), m_logo.count() * sizeof(GLfloat));
     f->glEnableVertexAttribArray(0);
     f->glEnableVertexAttribArray(1);
     f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
@@ -222,5 +237,5 @@ void GLWindow::paintGL()
 
     // Now call a function introduced in OpenGL 3.1 / OpenGL ES 3.0. We
     // requested a 3.3 or ES 3.0 context, so we know this will work.
-    f->glDrawArraysInstanced(GL_TRIANGLES, 0, m_logo.vertexCount(), 32 * 36);
+    //  f->glDrawArraysInstanced(GL_TRIANGLES, 0, m_logo.vertexCount(), 32 * 36);
 }
