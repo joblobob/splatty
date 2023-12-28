@@ -13,13 +13,17 @@ endif()
 
 set(INSTALL_EXAMPLEDIR "${INSTALL_EXAMPLESDIR}/opengl/hellogles3")
 
+set(Qt6_DIR "C:/Qt/Qt6.6.1/6.6.1/msvc2019_64/lib/cmake/Qt6")
+
+
 find_package(Qt6 REQUIRED COMPONENTS Core Gui OpenGL)
 
 qt_standard_project_setup()
  
 qt_add_executable(hellogles3
     logo.h logo.cpp
-    glwindow.cpp
+    glwindow.h glwindow.cpp
+    glwindow-splat.h glwindow-splat.cpp
     main.cpp
 )
 
@@ -27,7 +31,7 @@ add_library(gllib)
 target_sources(gllib
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES FILES
-    glwindow.ixx
+    
 )
 
 set_target_properties(hellogles3 PROPERTIES

@@ -5,7 +5,8 @@
 #include <QOpenGLContext>
 #include <QSurfaceFormat>
 
-import GlWindow;
+#include "GlWindow.h";
+#include "GlWindow-splat.h";
 
 // This example demonstrates easy, cross-platform usage of OpenGL ES 3.0 functions via
 // QOpenGLExtraFunctions in an application that works identically on desktop platforms
@@ -17,25 +18,29 @@ import GlWindow;
 
 int main(int argc, char* argv[])
 {
-    QGuiApplication app(argc, argv);
+	QGuiApplication app(argc, argv);
 
-    QSurfaceFormat fmt;
-    fmt.setDepthBufferSize(24);
+	QSurfaceFormat fmt;
+	fmt.setDepthBufferSize(24);
 
-    // Request OpenGL 3.3 core or OpenGL ES 3.0.
-    if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
-        qDebug("Requesting 4.12 core context");
-        fmt.setVersion(3, 0);
-        fmt.setProfile(QSurfaceFormat::CoreProfile);
-    } else {
-        qDebug("Requesting 3.0 context");
-        fmt.setVersion(3, 0);
-    }
+	// Request OpenGL 3.3 core or OpenGL ES 3.0.
+	if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
+		qDebug("Requesting 4.12 core context");
+		fmt.setVersion(3, 0);
+		fmt.setProfile(QSurfaceFormat::CoreProfile);
+	}
+	else {
+		qDebug("Requesting 3.0 context");
+		fmt.setVersion(3, 0);
+	}
 
-    QSurfaceFormat::setDefaultFormat(fmt);
+	QSurfaceFormat::setDefaultFormat(fmt);
 
-    GLWindow glWindow;
-    glWindow.showMaximized();
+	GLWindow glWindow;
+	glWindow.show();
 
-    return app.exec();
+	GLWindowSplat glWindowSplat;
+	glWindowSplat.show();
+
+	return app.exec();
 }

@@ -1,9 +1,8 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-#ifndef GLWIDGETSPLAT_H
-#define GLWIDGETSPLAT_H
 
+#include "logo.h"
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QVector3D>
@@ -13,15 +12,15 @@ QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
 QT_FORWARD_DECLARE_CLASS(QOpenGLBuffer)
 QT_FORWARD_DECLARE_CLASS(QOpenGLVertexArrayObject)
 
-class GLWindowSplat : public QOpenGLWindow {
+class GLWindow : public QOpenGLWindow {
 	Q_OBJECT
 		Q_PROPERTY(float z READ z WRITE setZ)
 		Q_PROPERTY(float r READ r WRITE setR)
 		Q_PROPERTY(float r2 READ r2 WRITE setR2)
 
 public:
-	GLWindowSplat();
-	~GLWindowSplat();
+	GLWindow();
+	~GLWindow();
 
 	void initializeGL();
 	void resizeGL(int w, int h);
@@ -42,7 +41,7 @@ private:
 	QOpenGLShaderProgram* m_program = nullptr;
 	QOpenGLBuffer* m_vbo = nullptr;
 	QOpenGLVertexArrayObject* m_vao = nullptr;
-
+	Logo m_logo;
 	int m_projMatrixLoc = 0;
 	int m_camMatrixLoc = 0;
 	int m_worldMatrixLoc = 0;
@@ -56,5 +55,3 @@ private:
 	float m_r = 0;
 	float m_r2 = 0;
 };
-
-#endif
