@@ -42,6 +42,22 @@ static std::vector<float> getProjectionMatrix(float fx, float fy, int width, int
 	};
 }
 
+static std::vector<float> getViewMatrix(camera camera) {
+	const rotation R = camera.rotation;
+	const position t = camera.position;
+	const std::vector<float> camToWorld = {
+		R.yaw.x, R.yaw.y, R.yaw.z, 0 ,
+		R.pitch.x, R.pitch.y, R.pitch.z, 0,
+		R.roll.x, R.roll.y, R.roll.z, 0,
+
+		-t.x * R.yaw.x - t.y * R.pitch.x - t.z * R.roll.x,
+		-t.x * R.yaw.y - t.y * R.pitch.y - t.z * R.roll.y,
+		-t.x * R.yaw.z - t.y * R.pitch.z - t.z * R.roll.z,
+		1
+	};
+
+	return camToWorld;
+}
 
 
 
