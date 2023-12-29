@@ -5,8 +5,8 @@
 #include <QOpenGLContext>
 #include <QSurfaceFormat>
 
-#include "GlWindow.h";
-#include "GlWindow-splat.h";
+#include "GlWindow.h"
+#include "GlWindow-splat.h"
 
 // This example demonstrates easy, cross-platform usage of OpenGL ES 3.0 functions via
 // QOpenGLExtraFunctions in an application that works identically on desktop platforms

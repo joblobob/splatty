@@ -7,11 +7,46 @@
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QVector3D>
+#include <vector>
 
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
 QT_FORWARD_DECLARE_CLASS(QOpenGLBuffer)
 QT_FORWARD_DECLARE_CLASS(QOpenGLVertexArrayObject)
+
+// let's get crazy and copy everything here!
+
+struct position {
+	float x, y, z;
+};
+
+struct rotation {
+	position yaw, pitch, roll;
+};
+
+struct camera {
+	int id, witdh, height;
+	position position;
+	rotation rotation;
+	float fy, fx;
+};
+
+static std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height) {
+	constexpr float znear = 0.2f;
+	constexpr float zfar = 200;
+
+	return { (2.0f * fx) / width, 0.f, 0.f,  0.f,
+			  0.f, -(2 * fy) / height, 0.f,  0.f,
+			  0.f, 0.f, zfar / (zfar - znear), 1.f,
+			  0.f, 0.f, -(zfar * znear) / (zfar - znear), 0.f
+	};
+}
+
+
+
+
+
+
 
 class GLWindowSplat : public QOpenGLWindow {
 	Q_OBJECT

@@ -1,6 +1,8 @@
 // Copyright (C) 2016 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
+#ifndef GLWIDGET_H
+#define GLWIDGET_H
 
 #include "logo.h"
 #include <QMatrix4x4>
@@ -55,3 +57,5 @@ private:
 	float m_r = 0;
 	float m_r2 = 0;
 };
+
+#endif
