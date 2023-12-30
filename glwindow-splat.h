@@ -118,6 +118,42 @@ std::vector<float> invert4(std::vector<float> a) {
 	};
 }
 
+static
+std::vector<float> rotate4(std::vector<float> a, float rad, float x, float y, float z) {
+	float len = std::hypot(x, y, z);
+	x /= len;
+	y /= len;
+	z /= len;
+	float s = std::sin(rad);
+	float c = std::cos(rad);
+	float t = 1 - c;
+	float b00 = x * x * t + c;
+	float b01 = y * x * t + z * s;
+	float b02 = z * x * t - y * s;
+	float b10 = x * y * t - z * s;
+	float b11 = y * y * t + c;
+	float b12 = z * y * t + x * s;
+	float b20 = x * z * t + y * s;
+	float b21 = y * z * t - x * s;
+	float b22 = z * z * t + c;
+	return {
+			a[0] * b00 + a[4] * b01 + a[8] * b02,
+			a[1] * b00 + a[5] * b01 + a[9] * b02,
+			a[2] * b00 + a[6] * b01 + a[10] * b02,
+			a[3] * b00 + a[7] * b01 + a[11] * b02,
+			a[0] * b10 + a[4] * b11 + a[8] * b12,
+			a[1] * b10 + a[5] * b11 + a[9] * b12,
+			a[2] * b10 + a[6] * b11 + a[10] * b12,
+			a[3] * b10 + a[7] * b11 + a[11] * b12,
+			a[0] * b20 + a[4] * b21 + a[8] * b22,
+			a[1] * b20 + a[5] * b21 + a[9] * b22,
+			a[2] * b20 + a[6] * b21 + a[10] * b22,
+			a[3] * b20 + a[7] * b21 + a[11] * b22,
+			a[12], a[13], a[14], a[15]
+			//...a.slice(12, 16)
+	};
+}
+
 
 class GLWindowSplat : public QOpenGLWindow {
 	Q_OBJECT
