@@ -212,6 +212,12 @@ private:
 
 		return (sign << 15) | (newExp << 10) | (frac >> 13);
 	}
+
+	int packHalf2x16(float x, float y) {
+		return unsigned int(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
+	}
+
+
 };
 
 class GLWindowSplat : public QOpenGLWindow {
