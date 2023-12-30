@@ -154,6 +154,16 @@ std::vector<float> rotate4(std::vector<float> a, float rad, float x, float y, fl
 	};
 }
 
+static std::vector<float> translate4(std::vector<float> a, float x, float y, float z) {
+	return{
+		//...a.slice(0, 12),
+			a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11],
+			a[0] * x + a[4] * y + a[8] * z + a[12],
+			a[1] * x + a[5] * y + a[9] * z + a[13],
+			a[2] * x + a[6] * y + a[10] * z + a[14],
+			a[3] * x + a[7] * y + a[11] * z + a[15]
+	};
+}
 
 class GLWindowSplat : public QOpenGLWindow {
 	Q_OBJECT
