@@ -165,6 +165,55 @@ static std::vector<float> translate4(std::vector<float> a, float x, float y, flo
 	};
 }
 
+struct worker {
+	float buffer;
+	int vertexCount = 0;
+	float viewProj;
+	// 6*4 + 4 + 4 = 8*4
+	// XYZ - Position (Float32)
+	// XYZ - Scale (Float32)
+	// RGBA - colors (uint8)
+	// IJKL - quaternion/rot (uint8)
+	const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+	std::vector<float> lastProj;
+	std::vector<int> depthIndex;
+	int lastVertexCount = 0;
+
+
+private:
+
+	int floatToHalf(float val) {
+		int f = std::floor(val);
+
+		int sign = (f >> 31) & 0x0001;
+		int exp = (f >> 23) & 0x00ff;
+		int frac = f & 0x007fffff;
+
+		int newExp;
+		if (exp == 0) {
+			newExp = 0;
+		}
+		else if (exp < 113) {
+			newExp = 0;
+			frac |= 0x00800000;
+			frac = frac >> (113 - exp);
+			if (frac & 0x01000000) {
+				newExp = 1;
+				frac = 0;
+			}
+		}
+		else if (exp < 142) {
+			newExp = exp - 112;
+		}
+		else {
+			newExp = 31;
+			frac = 0;
+		}
+
+		return (sign << 15) | (newExp << 10) | (frac >> 13);
+	}
+};
+
 class GLWindowSplat : public QOpenGLWindow {
 	Q_OBJECT
 		Q_PROPERTY(float z READ z WRITE setZ)
