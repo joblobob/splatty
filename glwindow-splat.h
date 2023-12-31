@@ -8,6 +8,7 @@
 #include <QOpenGLWindow>
 #include <QVector3D>
 #include <vector>
+#include <limits>
 
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
@@ -292,6 +293,61 @@ private:
 		}
 
 		//self.postMessage({ texdata, texwidth, texheight }, [texdata.buffer]);
+	}
+
+	void runSort(std::vector<float> viewProj) {
+		if (buffer.empty()) return;
+
+		const std::vector<float> f_buffer = buffer;
+		if (lastVertexCount == vertexCount) {
+			float dot =
+				lastProj[2] * viewProj[2] +
+				lastProj[6] * viewProj[6] +
+				lastProj[10] * viewProj[10];
+			if (std::abs(dot - 1) < 0.01) {
+				return;
+			}
+		}
+		else {
+			generateTexture();
+			lastVertexCount = vertexCount;
+		}
+
+		//console.time("sort");
+		float maxDepth = -std::numeric_limits<float>::infinity();
+		float minDepth = std::numeric_limits<float>::infinity();
+		std::vector<int> sizeList(vertexCount);
+		for (int i = 0; i < vertexCount; i++) {
+			float depth =
+				int((viewProj[2] * f_buffer[8 * i + 0] +
+					viewProj[6] * f_buffer[8 * i + 1] +
+					viewProj[10] * f_buffer[8 * i + 2]) *
+					4096) | 0;
+			sizeList[i] = depth;
+			if (depth > maxDepth) maxDepth = depth;
+			if (depth < minDepth) minDepth = depth;
+		}
+
+		// This is a 16 bit single-pass counting sort
+		float depthInv = (256 * 256) / (maxDepth - minDepth);
+		std::vector<int> counts0(256 * 256);
+		for (int i = 0; i < vertexCount; i++) {
+			sizeList[i] = int((sizeList[i] - minDepth) * depthInv) | 0;
+			counts0[sizeList[i]]++;
+		}
+		std::vector<int> starts0(256 * 256);
+		for (int i = 1; i < 256 * 256; i++)
+			starts0[i] = starts0[i - 1] + counts0[i - 1];
+		std::vector<int> depthIndex(vertexCount);
+		for (int i = 0; i < vertexCount; i++)
+			depthIndex[starts0[sizeList[i]]++] = i;
+
+		//console.timeEnd("sort");
+
+		lastProj = viewProj;
+		//self.postMessage({ depthIndex, viewProj, vertexCount }, [
+		//	depthIndex.buffer,
+	//	]);
 	}
 
 };
