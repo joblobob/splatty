@@ -20,8 +20,9 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui OpenGL)
 
 qt_standard_project_setup()
  
-qt_add_executable(hellogles3
+qt_add_executable(hellogles3 WIN32
     logo.h logo.cpp
+    happly.h
     glwindow.h glwindow.cpp
     glwindow-splat.h glwindow-splat.cpp
     main.cpp

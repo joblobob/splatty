@@ -14,6 +14,8 @@
 #include <QSequentialAnimationGroup>
 #include <QTimer>
 
+#include "happly.h"
+
 GLWindowSplat::GLWindowSplat()
 {
 	m_world.setToIdentity();
@@ -160,6 +162,14 @@ QByteArray versionedShaderCodehere(const char* src)
 
 void GLWindowSplat::initializeGL()
 {
+
+	// Construct a data object by reading from file
+	happly::PLYData plyIn("C:/Users/pag/Documents/splatty/out/build/nike.splat", true);
+
+	std::print("{}", plyIn.getElementNames().at(0));
+
+	std::print("ok start init");
+
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 
 	delete m_program;
