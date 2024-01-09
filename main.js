@@ -626,19 +626,19 @@ function createWorker(self) {
     let sortRunning;
     self.onmessage = (e) => {
         if (e.data.ply) {
-            vertexCount = 0;
-            runSort(viewProj);
-            buffer = processPlyBuffer(e.data.ply);
-            vertexCount = Math.floor(buffer.byteLength / rowLength);
-            postMessage({ buffer: buffer });
+         //   vertexCount = 0;
+          //  runSort(viewProj);
+        //    buffer = processPlyBuffer(e.data.ply);
+        //    vertexCount = Math.floor(buffer.byteLength / rowLength);
+       //     postMessage({ buffer: buffer });
         } else if (e.data.buffer) {
             buffer = e.data.buffer;
             vertexCount = e.data.vertexCount;
         } else if (e.data.vertexCount) {
             vertexCount = e.data.vertexCount;
         } else if (e.data.view) {
-            viewProj = e.data.view;
-            throttledSort();
+        //    viewProj = e.data.view;
+        //    throttledSort();
         }
     };
 }
@@ -857,15 +857,15 @@ async function main() {
 
     worker.onmessage = (e) => {
         if (e.data.buffer) {
-            splatData = new Uint8Array(e.data.buffer);
-            const blob = new Blob([splatData.buffer], {
-                type: "application/octet-stream",
-            });
-            const link = document.createElement("a");
-            link.download = "model.splat";
-            link.href = URL.createObjectURL(blob);
-            document.body.appendChild(link);
-            link.click();
+       //     splatData = new Uint8Array(e.data.buffer);
+       //     const blob = new Blob([splatData.buffer], {
+       //         type: "application/octet-stream",
+        //    });
+       ////     const link = document.createElement("a");
+       //     link.download = "model.splat";
+       //     link.href = URL.createObjectURL(blob);
+        //    document.body.appendChild(link);
+       //     link.click();
         } else if (e.data.texdata) {
             const { texdata, texwidth, texheight } = e.data;
             // console.log(texdata)
@@ -1053,9 +1053,9 @@ async function main() {
     frame();
 
     const selectFile = (file) => {
-        const fr = new FileReader();
+    /*    const fr = new FileReader();
         if (/\.json$/i.test(file.name)) {
-            fr.onload = () => {
+        /*    fr.onload = () => {
                 cameras = JSON.parse(fr.result);
                 viewMatrix = getViewMatrix(cameras[0]);
                 projectionMatrix = getProjectionMatrix(
@@ -1091,15 +1091,15 @@ async function main() {
                 }
             };
             fr.readAsArrayBuffer(file);
-        }
+        }*/
     };
 
-    window.addEventListener("hashchange", (e) => {
+   /* window.addEventListener("hashchange", (e) => {
         try {
             viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1)));
             carousel = false;
         } catch (err) { }
-    });
+    });*/
 
 
     let bytesRead = 0;

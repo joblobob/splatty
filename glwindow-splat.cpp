@@ -13,6 +13,10 @@
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
 #include <QTimer>
+#include <QFile>
+
+#include <print>
+#include <format>
 
 #include "happly.h"
 
@@ -164,13 +168,17 @@ void GLWindowSplat::initializeGL()
 {
 
 	// Construct a data object by reading from file
-	happly::PLYData plyIn("C:/Users/pag/Documents/splatty/out/build/nike.splat", true);
 
-	std::print("{}", plyIn.getElementNames().at(0));
+	QFile splatFile("nike.splat");
+	splatFile.open(QIODevice::ReadOnly);
+	QByteArray fileData = splatFile.readAll();
 
-	std::print("ok start init");
+	qCritical("start init");
+	qCritical() << fileData.size();
 
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+
+	//m_texture = new QOpenGLTexture(QImage::fromData(fileData));
 
 	delete m_program;
 	m_program = new QOpenGLShaderProgram;
@@ -197,7 +205,7 @@ void GLWindowSplat::initializeGL()
 	m_vbo = new QOpenGLBuffer;
 	m_vbo->create();
 	m_vbo->bind();
-	//m_vbo->allocate(m_logo.constData(), m_logo.count() * sizeof(GLfloat));
+	//m_vbo->allocate(fileData.constData(), fileData.size() * sizeof(GLubyte));
 	f->glEnableVertexAttribArray(0);
 	f->glEnableVertexAttribArray(1);
 	f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
@@ -244,8 +252,8 @@ void GLWindowSplat::paintGL()
 		m_program->setUniformValue(m_myMatrixLoc, mm);
 		m_program->setUniformValue(m_lightPosLoc, QVector3D(0, 0, 70));
 	}
-
+	const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 	// Now call a function introduced in OpenGL 3.1 / OpenGL ES 3.0. We
 	// requested a 3.3 or ES 3.0 context, so we know this will work.
-	//  f->glDrawArraysInstanced(GL_TRIANGLES, 0, m_logo.vertexCount(), 32 * 36);
+	//f->glDrawArraysInstanced(GL_TRIANGLES, 0, 8655712 / rowLength, 32 * 36);
 }
