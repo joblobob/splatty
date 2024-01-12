@@ -17,6 +17,7 @@
 
 #include <print>
 #include <format>
+#include <vector>
 
 #include "happly.h"
 
@@ -183,6 +184,9 @@ void GLWindowSplat::initializeGL()
 	qCritical() << fileData.size() / rowLength;
 	qCritical() << fileData.size();
 
+	m_worker.setBuffer({ 25000, 0.5f }, fileData.size() / rowLength);
+	m_worker.vertexCount = fileData.size() / rowLength;
+
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 
 	//m_texture = new QOpenGLTexture(QImage::fromData(fileData));
@@ -195,11 +199,11 @@ void GLWindowSplat::initializeGL()
 	m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, versionedShaderCodehere(fragmentShaderSource));
 	m_program->link();
 
-	m_projMatrixLoc = m_program->uniformLocation("projMatrix");
-	m_camMatrixLoc = m_program->uniformLocation("camMatrix");
-	m_worldMatrixLoc = m_program->uniformLocation("worldMatrix");
+	m_projMatrixLoc = m_program->uniformLocation("projection");
+	m_camMatrixLoc = m_program->uniformLocation("viewport");
+	m_worldMatrixLoc = m_program->uniformLocation("view");
 	m_myMatrixLoc = m_program->uniformLocation("myMatrix");
-	m_lightPosLoc = m_program->uniformLocation("lightPos");
+	m_lightPosLoc = m_program->uniformLocation("focal");
 
 	// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
 	delete m_vao;
@@ -212,7 +216,7 @@ void GLWindowSplat::initializeGL()
 	m_vbo = new QOpenGLBuffer;
 	m_vbo->create();
 	m_vbo->bind();
-	//m_vbo->allocate(fileData.constData(), fileData.size() * sizeof(GLubyte));
+	m_vbo->allocate(fileData.data(), fileData.size() * sizeof(GLubyte));
 	f->glEnableVertexAttribArray(0);
 	f->glEnableVertexAttribArray(1);
 	f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
@@ -262,5 +266,5 @@ void GLWindowSplat::paintGL()
 	const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 	// Now call a function introduced in OpenGL 3.1 / OpenGL ES 3.0. We
 	// requested a 3.3 or ES 3.0 context, so we know this will work.
-	//f->glDrawArraysInstanced(GL_TRIANGLES, 0, 8655712 / rowLength, 32 * 36);
+	f->glDrawArraysInstanced(GL_TRIANGLES, 0, rowLength, 32 * 36);
 }

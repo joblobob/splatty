@@ -182,7 +182,7 @@ struct worker {
 	int lastVertexCount = 0;
 
 
-private:
+	//private:
 
 	int floatToHalf(float val) {
 		int f = std::floor(val);
@@ -459,6 +459,8 @@ private:
 	bool m_uniformsDirty = true;
 	float m_r = 0;
 	float m_r2 = 0;
+
+	worker m_worker;
 };
 
 #endif
