@@ -170,7 +170,7 @@ static std::vector<float> translate4(std::vector<float> a, float x, float y, flo
 struct worker {
 	std::vector<float> buffer;
 	int vertexCount = 0;
-	float viewProj;
+	std::vector<float> viewProj;
 	// 6*4 + 4 + 4 = 8*4
 	// XYZ - Position (Float32)
 	// XYZ - Scale (Float32)
@@ -354,19 +354,36 @@ private:
 
 	bool sortRunning = false;
 
-	/*const int throttledSort{
+	int throttledSort() {
 		if (!sortRunning) {
 			sortRunning = true;
 			std::vector<float> lastView = viewProj;
 			runSort(lastView);
-			setTimeout(() = > {
-				sortRunning = false;
-				if (lastView != = viewProj) {
-					throttledSort();
-				}
-			}, 0);
+			//	setTimeout(() = > {
+				//	sortRunning = false;
+			//		if (lastView != = viewProj) { // when the view changes, we should re-do the sort
+				//		throttledSort();
+				//	}
+				//}, 0);
 		}
-	};*/
+	};
+
+	void setBuffer(const std::vector<float> newbuffer, int newvertexCount)
+	{
+		buffer = newbuffer;
+		vertexCount = newvertexCount;
+	}
+
+	void setVertexCount(int newvertexCount)
+	{
+		vertexCount = newvertexCount;
+	}
+
+	void setView(const std::vector<float> newviewProj)
+	{
+		viewProj = newviewProj;
+		throttledSort();
+	}
 
 	/*self.onmessage = (e) = > {
 		if (e.data.ply) {

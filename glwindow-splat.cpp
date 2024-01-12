@@ -173,7 +173,14 @@ void GLWindowSplat::initializeGL()
 	splatFile.open(QIODevice::ReadOnly);
 	QByteArray fileData = splatFile.readAll();
 
+	constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+
+	const int downsample =
+		fileData.size() / rowLength > 500000 ? 1 : 1 / 2/*devicePixelRatio*/;
+
 	qCritical("start init");
+	qCritical() << downsample;
+	qCritical() << fileData.size() / rowLength;
 	qCritical() << fileData.size();
 
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
