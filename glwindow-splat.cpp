@@ -9,6 +9,7 @@
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
+#include <QOpenGlContext>
 #include <QOpenGLVertexArrayObject>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
@@ -172,38 +173,69 @@ void GLWindowSplat::initializeGL()
 
 	QFile splatFile("nike.splat");
 	splatFile.open(QIODevice::ReadOnly);
-	QByteArray fileData = splatFile.readAll();
+	QByteArray splatData = splatFile.readAll();
 
 	constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 
 	const int downsample =
-		fileData.size() / rowLength > 500000 ? 1 : 1 / 2/*devicePixelRatio*/;
+		splatData.size() / rowLength > 500000 ? 1 : 1 / 2/*devicePixelRatio*/;
 
 	qCritical("start init");
 	qCritical() << downsample;
-	qCritical() << fileData.size() / rowLength;
-	qCritical() << fileData.size();
+	qCritical() << splatData.size() / rowLength;
+	qCritical() << splatData.size();
 
-	m_worker.setBuffer({ 25000, 0.5f }, fileData.size() / rowLength);
-	m_worker.vertexCount = fileData.size() / rowLength;
+	std::vector<float> projectionMatrix;
+
+	m_worker.setBuffer({ 25000, 0.5f }, splatData.size() / rowLength);
+	m_worker.vertexCount = splatData.size() / rowLength;
+
+	QOpenGLContext* gl = QOpenGLContext::currentContext();
 
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
-
-	//m_texture = new QOpenGLTexture(QImage::fromData(fileData));
 
 	delete m_program;
 	m_program = new QOpenGLShaderProgram;
 	// Prepend the correct version directive to the sources. The rest is the
 	// same, thanks to the common GLSL syntax.
-	m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, versionedShaderCodehere(vertexShaderSource));
-	m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, versionedShaderCodehere(fragmentShaderSource));
-	m_program->link();
+	bool isVertexOk = m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, versionedShaderCodehere(vertexShaderSource));
+	bool isFragmentOk = m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, versionedShaderCodehere(fragmentShaderSource));
+	bool isLinked = m_program->link();
+
+	bool isBoundProgram = m_program->bind();
+
+	qCritical() << "hola" << isVertexOk << isFragmentOk << isLinked << isBoundProgram;
+
+	f->glDisable(GL_DEPTH_TEST); // Disable depth testing
+
+	f->glEnable(GL_BLEND);
+	f->glBlendFuncSeparate(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
 
 	m_projMatrixLoc = m_program->uniformLocation("projection");
-	m_camMatrixLoc = m_program->uniformLocation("viewport");
-	m_worldMatrixLoc = m_program->uniformLocation("view");
-	m_myMatrixLoc = m_program->uniformLocation("myMatrix");
-	m_lightPosLoc = m_program->uniformLocation("focal");
+	m_viewPortLoc = m_program->uniformLocation("viewport");
+	m_focalLoc = m_program->uniformLocation("focal");
+	m_viewLoc = m_program->uniformLocation("view");
+
+	// positions
+	const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
+	QOpenGLBuffer vertexBuffer;
+	vertexBuffer.create();
+
+	f->glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.bufferId());
+	f->glBufferData(GL_ARRAY_BUFFER, 8, triangleVertices.data(), GL_STATIC_DRAW);
+	const auto a_position = m_program->attributeLocation("position");
+	f->glEnableVertexAttribArray(a_position);
+	f->glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.bufferId());
+	f->glVertexAttribPointer(a_position, 2, GL_FLOAT, false, 0, 0);
+
+
+
+
+
+
+
+
+
 
 	// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
 	delete m_vao;
@@ -211,12 +243,12 @@ void GLWindowSplat::initializeGL()
 	if (m_vao->create())
 		m_vao->bind();
 
-	m_program->bind();
+
 	delete m_vbo;
 	m_vbo = new QOpenGLBuffer;
 	m_vbo->create();
 	m_vbo->bind();
-	m_vbo->allocate(fileData.data(), fileData.size() * sizeof(GLubyte));
+	m_vbo->allocate(splatData.data(), splatData.size() * sizeof(GLubyte));
 	f->glEnableVertexAttribArray(0);
 	f->glEnableVertexAttribArray(1);
 	f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
@@ -253,14 +285,14 @@ void GLWindowSplat::paintGL()
 		QMatrix4x4 camera;
 		camera.lookAt(m_eye, m_eye + m_target, QVector3D(0, 1, 0));
 		m_program->setUniformValue(m_projMatrixLoc, m_proj);
-		m_program->setUniformValue(m_camMatrixLoc, camera);
+		m_program->setUniformValue(m_focalLoc, camera);
 		QMatrix4x4 wm = m_world;
 		wm.rotate(m_r, 1, 1, 0);
-		m_program->setUniformValue(m_worldMatrixLoc, wm);
+		m_program->setUniformValue(m_viewPortLoc, wm);
 		QMatrix4x4 mm;
 		mm.setToIdentity();
 		mm.rotate(-m_r2, 1, 0, 0);
-		m_program->setUniformValue(m_myMatrixLoc, mm);
+		m_program->setUniformValue(m_projMatrixLoc, mm);
 		m_program->setUniformValue(m_lightPosLoc, QVector3D(0, 0, 70));
 	}
 	const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;

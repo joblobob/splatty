@@ -448,9 +448,10 @@ private:
 	QOpenGLVertexArrayObject* m_vao = nullptr;
 
 	int m_projMatrixLoc = 0;
-	int m_camMatrixLoc = 0;
-	int m_worldMatrixLoc = 0;
-	int m_myMatrixLoc = 0;
+	int m_viewPortLoc = 0;
+	int m_focalLoc = 0;
+	int m_viewLoc = 0;
+
 	int m_lightPosLoc = 0;
 	QMatrix4x4 m_proj;
 	QMatrix4x4 m_world;
