@@ -6,6 +6,7 @@
 
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
+#include <QOpenGLTexture>
 #include <QVector3D>
 #include <vector>
 #include <limits>
@@ -446,6 +447,7 @@ private:
 	QOpenGLShaderProgram* m_program = nullptr;
 	QOpenGLBuffer* m_vbo = nullptr;
 	QOpenGLVertexArrayObject* m_vao = nullptr;
+
 
 	int m_projMatrixLoc = 0;
 	int m_viewPortLoc = 0;

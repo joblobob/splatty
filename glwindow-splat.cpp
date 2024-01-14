@@ -223,18 +223,25 @@ void GLWindowSplat::initializeGL()
 
 	f->glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.bufferId());
 	f->glBufferData(GL_ARRAY_BUFFER, 8, triangleVertices.data(), GL_STATIC_DRAW);
-	const auto a_position = m_program->attributeLocation("position");
+	const int a_position = m_program->attributeLocation("position");
 	f->glEnableVertexAttribArray(a_position);
 	f->glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.bufferId());
 	f->glVertexAttribPointer(a_position, 2, GL_FLOAT, false, 0, 0);
 
+	m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
+	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
 
+	auto u_textureLocation = m_program->uniformLocation("u_texture");
+	f->glUniform1i(u_textureLocation, 0);
 
+	QOpenGLBuffer indexBuffer;
+	const int a_index = m_program->attributeLocation("index");
+	f->glEnableVertexAttribArray(a_index);
+	f->glBindBuffer(GL_ARRAY_BUFFER, indexBuffer.bufferId());
+	gl->extraFunctions()->glVertexAttribIPointer(a_index, 1, GL_INT, false, 0);
+	gl->extraFunctions()->glVertexAttribDivisor(a_index, 1);
 
-
-
-
-
+	//jusquici inittialize!
 
 
 	// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
