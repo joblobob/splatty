@@ -34,21 +34,22 @@ struct camera {
 	float fy, fx;
 };
 
-static std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height) {
+static GLfloat* getProjectionMatrix(float fx, float fy, int width, int height) {
 	constexpr float znear = 0.2f;
 	constexpr float zfar = 200;
 
-	return { (2.0f * fx) / width, 0.f, 0.f,  0.f,
+	GLfloat matrix[] = { (2.0f * fx) / width, 0.f, 0.f,  0.f,
 			  0.f, -(2 * fy) / height, 0.f,  0.f,
 			  0.f, 0.f, zfar / (zfar - znear), 1.f,
 			  0.f, 0.f, -(zfar * znear) / (zfar - znear), 0.f
 	};
+	return matrix;
 }
 
-static std::vector<float> getViewMatrix(camera camera) {
+static GLfloat* getViewMatrix(camera camera) {
 	const rotation R = camera.rotation;
 	const position t = camera.position;
-	const std::vector<float> camToWorld = {
+	GLfloat camToWorld[] = {
 		R.yaw.x, R.yaw.y, R.yaw.z, 0 ,
 		R.pitch.x, R.pitch.y, R.pitch.z, 0,
 		R.roll.x, R.roll.y, R.roll.z, 0,
@@ -411,6 +412,16 @@ struct worker {
 
 };
 
+static camera baseCamera = { 0,1959,1090,{
+			-3.0089893469241797f, -0.11086489695181866f, -3.7527640949141428f},
+		{
+			{0.876134201218856f, 0.06925962026449776f, 0.47706599800804744f} ,
+			{ -0.04747421839895102f, 0.9972110940209488f, -0.057586739349882114f},
+			{ -0.4797239414934443f, 0.027805376500959853f, 0.8769787916452908f},
+		},
+		1164.6601287484507,
+		1159.5880733038064 };
+
 static const std::vector<float> defaultViewMatrix = {
 	0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07,
 		0.03, 6.55, 1
@@ -439,6 +450,10 @@ public:
 	void setR(float v);
 	float r2() const { return m_r2; }
 	void setR2(float v);
+
+	void fromWorkerAddTexData(std::vector<float> texData);
+	void fromWorkderDepthIndex(int depthIdex);
+
 private slots:
 	void startSecondStage();
 
@@ -464,6 +479,9 @@ private:
 	float m_r2 = 0;
 
 	worker m_worker;
+
+	void resize();
+	void frame();
 };
 
 #endif

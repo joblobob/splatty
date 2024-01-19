@@ -245,7 +245,7 @@ void GLWindowSplat::initializeGL()
 
 
 	// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
-	delete m_vao;
+	/*delete m_vao;
 	m_vao = new QOpenGLVertexArrayObject;
 	if (m_vao->create())
 		m_vao->bind();
@@ -265,7 +265,7 @@ void GLWindowSplat::initializeGL()
 	m_vbo->release();
 
 	f->glEnable(GL_DEPTH_TEST);
-	f->glEnable(GL_CULL_FACE);
+	f->glEnable(GL_CULL_FACE);*/
 }
 
 void GLWindowSplat::resizeGL(int w, int h)
@@ -273,6 +273,19 @@ void GLWindowSplat::resizeGL(int w, int h)
 	m_proj.setToIdentity();
 	m_proj.perspective(45.0f, GLfloat(w) / h, 0.01f, 100.0f);
 	m_uniformsDirty = true;
+
+	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+
+	GLfloat tabFloat[] = { baseCamera.fx,  baseCamera.fy };
+	f->glUniform2fv(m_focalLoc, 2, tabFloat);
+
+	auto projectionMatrix = getProjectionMatrix(baseCamera.fx, baseCamera.fy, w, h);
+
+	GLfloat innerTab[] = { w,  h };
+	f->glUniform2fv(m_viewPortLoc, 2, innerTab);
+
+	f->glViewport(0, 0, w, h);
+	f->glUniformMatrix4fv(m_projMatrixLoc, 16, false, projectionMatrix);
 }
 
 void GLWindowSplat::paintGL()
