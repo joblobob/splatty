@@ -34,22 +34,21 @@ struct camera {
 	float fy, fx;
 };
 
-static GLfloat* getProjectionMatrix(float fx, float fy, int width, int height) {
+static std::vector<float>getProjectionMatrix(float fx, float fy, int width, int height) {
 	constexpr float znear = 0.2f;
 	constexpr float zfar = 200;
 
-	GLfloat matrix[] = { (2.0f * fx) / width, 0.f, 0.f,  0.f,
+	return{ (2.0f * fx) / width, 0.f, 0.f,  0.f,
 			  0.f, -(2 * fy) / height, 0.f,  0.f,
 			  0.f, 0.f, zfar / (zfar - znear), 1.f,
 			  0.f, 0.f, -(zfar * znear) / (zfar - znear), 0.f
 	};
-	return matrix;
 }
 
-static GLfloat* getViewMatrix(camera camera) {
+static std::vector<float> getViewMatrix(camera camera) {
 	const rotation R = camera.rotation;
 	const position t = camera.position;
-	GLfloat camToWorld[] = {
+	return {
 		R.yaw.x, R.yaw.y, R.yaw.z, 0 ,
 		R.pitch.x, R.pitch.y, R.pitch.z, 0,
 		R.roll.x, R.roll.y, R.roll.z, 0,
@@ -59,8 +58,6 @@ static GLfloat* getViewMatrix(camera camera) {
 		-t.x * R.yaw.z - t.y * R.pitch.z - t.z * R.roll.z,
 		1
 	};
-
-	return camToWorld;
 }
 
 static std::vector<float> multiply4(std::vector<float> a, std::vector<float> b) {
@@ -278,7 +275,7 @@ struct worker {
 					2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
 					1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
 			};
-			std::transform(M.begin(), M.end(), M.begin(), [&](float val) -> float {return val * scale[std::floor(i / 3)]; });
+			//std::transform(M.begin(), M.end(), M.begin(), [&](float val) -> float {return val * scale[std::floor(i / 3)-1]; });
 			//.map((k, i) = > k * scale[Math.floor(i / 3)]);
 
 			const std::vector<float> sigma = {
@@ -356,7 +353,7 @@ struct worker {
 
 	bool sortRunning = false;
 
-	int throttledSort() {
+	void throttledSort() {
 		if (!sortRunning) {
 			sortRunning = true;
 			std::vector<float> lastView = viewProj;
@@ -479,6 +476,7 @@ private:
 	float m_r2 = 0;
 
 	worker m_worker;
+	std::vector<float> m_projectionMatrix;
 
 	void resize();
 	void frame();
