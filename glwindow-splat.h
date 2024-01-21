@@ -168,6 +168,7 @@ static std::vector<float> translate4(std::vector<float> a, float x, float y, flo
 
 struct worker {
 	std::vector<float> buffer;
+	std::vector<char> u_buffer;
 	int vertexCount = 0;
 	std::vector<float> viewProj;
 	// 6*4 + 4 + 4 = 8*4
@@ -227,9 +228,9 @@ struct worker {
 
 		int texwidth = 1024 * 2; // Set to your desired width
 		int texheight = std::ceil((2 * vertexCount) / texwidth); // Set to your desired height
-		std::vector<int> texdata(texwidth * texheight * 4); // 4 components per pixel (RGBA)
-		std::vector<unsigned char> texdata_c(texwidth * texheight * 4);
-		std::vector<float> texdata_f(texwidth * texheight * 4);
+		std::vector<int> texdata(texwidth * texheight * 4 * 2); // 4 components per pixel (RGBA)
+		std::vector<unsigned char> texdata_c(texwidth * texheight * 4 * 4 * 2);
+		std::vector<float> texdata_f(texwidth * texheight * 4 * 2);
 
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
@@ -242,10 +243,10 @@ struct worker {
 			texdata_f[8 * i + 2] = f_buffer[8 * i + 2];
 
 			// r, g, b, a
-			texdata_c[4 * (8 * i + 7) + 0] = (unsigned char)f_buffer[32 * i + 24 + 0];
-			texdata_c[4 * (8 * i + 7) + 1] = (unsigned char)f_buffer[32 * i + 24 + 1];
-			texdata_c[4 * (8 * i + 7) + 2] = (unsigned char)f_buffer[32 * i + 24 + 2];
-			texdata_c[4 * (8 * i + 7) + 3] = (unsigned char)f_buffer[32 * i + 24 + 3];
+			texdata_c[4 * (8 * i + 7) + 0] = u_buffer[32 * i + 24 + 0];
+			texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
+			texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
+			texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
 
 			// quaternions
 			std::vector<float> scale = {
@@ -255,10 +256,10 @@ struct worker {
 			};
 
 			std::vector<int> rot = {
-				((int)f_buffer[32 * i + 28 + 0] - 128) / 128,
-					((int)f_buffer[32 * i + 28 + 1] - 128) / 128,
-					((int)f_buffer[32 * i + 28 + 2] - 128) / 128,
-					((int)f_buffer[32 * i + 28 + 3] - 128) / 128,
+				(u_buffer[32 * i + 28 + 0] - 128) / 128,
+					(u_buffer[32 * i + 28 + 1] - 128) / 128,
+					(u_buffer[32 * i + 28 + 2] - 128) / 128,
+					(u_buffer[32 * i + 28 + 3] - 128) / 128,
 			};
 
 			// Compute the matrix product of S and R (M = S * R)
@@ -275,7 +276,9 @@ struct worker {
 					2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
 					1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
 			};
-			//std::transform(M.begin(), M.end(), M.begin(), [&](float val) -> float {return val * scale[std::floor(i / 3)-1]; });
+			for (int i = 0; i < M.size(); i++) {
+				M[i] = M[i] * scale[std::floor(i / 3)];
+			}
 			//.map((k, i) = > k * scale[Math.floor(i / 3)]);
 
 			const std::vector<float> sigma = {
@@ -319,10 +322,10 @@ struct worker {
 		std::vector<int> sizeList(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
 			float depth =
-				int((viewProj[2] * f_buffer[8 * i + 0] +
+				(viewProj[2] * f_buffer[8 * i + 0] +
 					viewProj[6] * f_buffer[8 * i + 1] +
 					viewProj[10] * f_buffer[8 * i + 2]) *
-					4096) | 0;
+					4096;
 			sizeList[i] = depth;
 			if (depth > maxDepth) maxDepth = depth;
 			if (depth < minDepth) minDepth = depth;
@@ -332,7 +335,7 @@ struct worker {
 		float depthInv = (256 * 256) / (maxDepth - minDepth);
 		std::vector<int> counts0(256 * 256);
 		for (int i = 0; i < vertexCount; i++) {
-			sizeList[i] = int((sizeList[i] - minDepth) * depthInv) | 0;
+			sizeList[i] = std::floor((sizeList[i] - minDepth) * depthInv);
 			counts0[sizeList[i]]++;
 		}
 		std::vector<int> starts0(256 * 256);
@@ -367,9 +370,10 @@ struct worker {
 		}
 	};
 
-	void setBuffer(const std::vector<float> newbuffer, int newvertexCount)
+	void setBuffer(const std::vector<float>& newbuffer, const std::vector<char>& orignialSplatData, int newvertexCount)
 	{
 		buffer = newbuffer;
+		u_buffer = orignialSplatData;
 		vertexCount = newvertexCount;
 	}
 

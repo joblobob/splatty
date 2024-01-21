@@ -171,9 +171,6 @@ void GLWindowSplat::initializeGL()
 
 	// Construct a data object by reading from file
 
-	QFile splatFile("nike.splat");
-	splatFile.open(QIODevice::ReadOnly);
-	//QByteArray splatData = splatFile.readAll();
 
 	constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 
@@ -188,6 +185,11 @@ void GLWindowSplat::initializeGL()
 		std::vector<float> projectionMatrix;
 
 		std::vector<float> newData;
+		std::vector<char> originalData;
+
+		QFile splatFile("plush.splat");
+		splatFile.open(QIODevice::ReadOnly);
+
 		QDataStream datastr(&splatFile);
 		datastr.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
@@ -196,9 +198,16 @@ void GLWindowSplat::initializeGL()
 			datastr >> val;
 			newData.push_back(val);
 		}
+		splatFile.close();
+		splatFile.open(QIODevice::ReadOnly);
 		qCritical() << newData.size();
-		m_worker.setBuffer(newData, newData.size() / rowLength);
-		m_worker.vertexCount = newData.size() / rowLength;
+		QByteArray splatData = splatFile.readAll();
+		splatFile.close();
+		for (const char data : splatData) {
+			originalData.push_back(data);
+		}
+
+		m_worker.setBuffer(newData, originalData, (newData.size() / rowLength));
 
 		QOpenGLContext* gl = QOpenGLContext::currentContext();
 
