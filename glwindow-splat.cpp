@@ -185,27 +185,27 @@ void GLWindowSplat::initializeGL()
 		std::vector<float> projectionMatrix;
 
 		std::vector<float> newData;
-		std::vector<char> originalData;
+		std::vector<unsigned char> originalData;
 
 		QFile splatFile("plush.splat");
-		splatFile.open(QIODevice::ReadOnly);
-
-		QDataStream datastr(&splatFile);
-		datastr.setFloatingPointPrecision(QDataStream::SinglePrecision);
-
-		float val;
-		while (!splatFile.atEnd()) {
-			datastr >> val;
-			newData.push_back(val);
-		}
-		splatFile.close();
 		splatFile.open(QIODevice::ReadOnly);
 		qCritical() << newData.size();
 		QByteArray splatData = splatFile.readAll();
 		splatFile.close();
-		for (const char data : splatData) {
+
+		for (const unsigned char data : splatData) {
 			originalData.push_back(data);
 		}
+
+
+		for (int i = 0; i < splatData.size(); i += 4) {
+			float f;
+			uchar b[] = { splatData[i + 0], splatData[i + 1], splatData[i + 2], splatData[i + 3] };
+			memcpy(&f, &b, sizeof(f));
+			newData.push_back(f);
+		}
+
+
 
 		m_worker.setBuffer(newData, originalData, (newData.size() / rowLength));
 

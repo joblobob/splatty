@@ -168,7 +168,7 @@ static std::vector<float> translate4(std::vector<float> a, float x, float y, flo
 
 struct worker {
 	std::vector<float> buffer;
-	std::vector<char> u_buffer;
+	std::vector<unsigned char> u_buffer;
 	int vertexCount = 0;
 	std::vector<float> viewProj;
 	// 6*4 + 4 + 4 = 8*4
@@ -317,15 +317,15 @@ struct worker {
 		}
 
 		//console.time("sort");
-		float maxDepth = -std::numeric_limits<float>::infinity();
-		float minDepth = std::numeric_limits<float>::infinity();
+		int maxDepth = INT_MIN;
+		int minDepth = INT_MAX;
 		std::vector<int> sizeList(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
-			float depth =
+			int depth =
 				(viewProj[2] * f_buffer[8 * i + 0] +
 					viewProj[6] * f_buffer[8 * i + 1] +
 					viewProj[10] * f_buffer[8 * i + 2]) *
-					4096;
+				4096;
 			sizeList[i] = depth;
 			if (depth > maxDepth) maxDepth = depth;
 			if (depth < minDepth) minDepth = depth;
@@ -370,7 +370,7 @@ struct worker {
 		}
 	};
 
-	void setBuffer(const std::vector<float>& newbuffer, const std::vector<char>& orignialSplatData, int newvertexCount)
+	void setBuffer(const std::vector<float>& newbuffer, const std::vector<unsigned char>& orignialSplatData, int newvertexCount)
 	{
 		buffer = newbuffer;
 		u_buffer = orignialSplatData;
