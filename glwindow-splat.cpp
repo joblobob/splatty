@@ -207,7 +207,7 @@ void GLWindowSplat::initializeGL()
 
 
 
-		m_worker.setBuffer(newData, originalData, (newData.size() / rowLength));
+		m_worker.setBuffer(newData, originalData, (originalData.size() / rowLength));
 
 		QOpenGLContext* gl = QOpenGLContext::currentContext();
 

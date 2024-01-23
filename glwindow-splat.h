@@ -183,13 +183,22 @@ struct worker {
 
 
 	//private:
+	//var _floatView = new Float32Array(1);
+	//var _int32View = new Int32Array(_floatView.buffer);
 
 	int floatToHalf(float val) {
+		//_floatView[0] = float;
+		//var f = _int32View[0];
+			//val = 0.022582
+			//f = 1018756950
+
 		int f = std::floor(val);
 
 		int sign = (f >> 31) & 0x0001;
 		int exp = (f >> 23) & 0x00ff;
 		int frac = f & 0x007fffff;
+
+		//0, 121, 3735382
 
 		int newExp;
 		if (exp == 0) {
@@ -227,10 +236,11 @@ struct worker {
 		//const std::vector<int> u_buffer = buffer;
 
 		int texwidth = 1024 * 2; // Set to your desired width
-		int texheight = std::ceil((2 * vertexCount) / texwidth); // Set to your desired height
-		std::vector<int> texdata(texwidth * texheight * 4 * 2); // 4 components per pixel (RGBA)
-		std::vector<unsigned char> texdata_c(texwidth * texheight * 4 * 4 * 2);
-		std::vector<float> texdata_f(texwidth * texheight * 4 * 2);
+		int texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
+		std::vector<unsigned int> texdata(texwidth * texheight * 4); // 4 components per pixel (RGBA)
+		std::vector<unsigned char> texdata_c(texwidth * texheight * 4 * 4);
+		texdata_c = u_buffer;
+		std::vector<float> texdata_f(texwidth * texheight * 4);
 
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
@@ -255,11 +265,11 @@ struct worker {
 					f_buffer[8 * i + 3 + 2],
 			};
 
-			std::vector<int> rot = {
-				(u_buffer[32 * i + 28 + 0] - 128) / 128,
-					(u_buffer[32 * i + 28 + 1] - 128) / 128,
-					(u_buffer[32 * i + 28 + 2] - 128) / 128,
-					(u_buffer[32 * i + 28 + 3] - 128) / 128,
+			std::vector<float> rot = {
+				(float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
+					(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
+					(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
+					(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f
 			};
 
 			// Compute the matrix product of S and R (M = S * R)
