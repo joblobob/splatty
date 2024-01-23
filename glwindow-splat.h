@@ -192,7 +192,8 @@ struct worker {
 			//val = 0.022582
 			//f = 1018756950
 
-		int f = std::floor(val);
+		unsigned int f;
+		memcpy(&f, &val, 4);
 
 		int sign = (f >> 31) & 0x0001;
 		int exp = (f >> 23) & 0x00ff;
