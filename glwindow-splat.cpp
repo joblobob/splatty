@@ -22,7 +22,7 @@
 
 #include "happly.h"
 
-GLWindowSplat::GLWindowSplat()
+GLWindowSplat::GLWindowSplat() : m_worker(this)
 {
 	m_world.setToIdentity();
 	m_world.translate(0, 0, -1);
@@ -253,10 +253,10 @@ void GLWindowSplat::initializeGL()
 		auto u_textureLocation = m_program->uniformLocation("u_texture");
 		f->glUniform1i(u_textureLocation, 0);
 
-		QOpenGLBuffer indexBuffer;
+		m_indexBuffer.create();
 		const int a_index = m_program->attributeLocation("index");
 		f->glEnableVertexAttribArray(a_index);
-		f->glBindBuffer(GL_ARRAY_BUFFER, indexBuffer.bufferId());
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
 		gl->extraFunctions()->glVertexAttribIPointer(a_index, 1, GL_INT, false, 0);
 		gl->extraFunctions()->glVertexAttribDivisor(a_index, 1);
 
@@ -359,4 +359,29 @@ void GLWindowSplat::paintGL()
 		// Now call a function introduced in OpenGL 3.1 / OpenGL ES 3.0. We
 		// requested a 3.3 or ES 3.0 context, so we know this will work.
 		f->glDrawArraysInstanced(GL_TRIANGLES, 0, rowLength, 32 * 36);*/
+}
+
+void GLWindowSplat::setTextureData(std::vector<unsigned int> texdata, int texwidth, int texheight)
+{
+	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
+	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	f->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32UI, texwidth, texheight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, texdata.data());
+	f->glActiveTexture(GL_TEXTURE0);
+	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
+
+}
+
+
+
+void GLWindowSplat::setDepthIndex(std::vector<unsigned int> depthIndex, std::vector<float> viewProj, int vertexCount) {
+	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+
+	f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
+	QOpenGLContext::currentContext()->extraFunctions()->glBufferData(GL_ARRAY_BUFFER, depthIndex.size() * 4, depthIndex.data(), GL_DYNAMIC_DRAW);
 }

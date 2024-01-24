@@ -7,6 +7,7 @@
 #include <QMatrix4x4>
 #include <QOpenGLWindow>
 #include <QOpenGLTexture>
+#include <QOpenGLBuffer>
 #include <QVector3D>
 #include <vector>
 #include <limits>
@@ -14,7 +15,6 @@
 
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
-QT_FORWARD_DECLARE_CLASS(QOpenGLBuffer)
 QT_FORWARD_DECLARE_CLASS(QOpenGLVertexArrayObject)
 
 // let's get crazy and copy everything here!
@@ -166,263 +166,6 @@ static std::vector<float> translate4(std::vector<float> a, float x, float y, flo
 	};
 }
 
-struct worker {
-	std::vector<float> buffer;
-	std::vector<unsigned char> u_buffer;
-	int vertexCount = 0;
-	std::vector<float> viewProj;
-	// 6*4 + 4 + 4 = 8*4
-	// XYZ - Position (Float32)
-	// XYZ - Scale (Float32)
-	// RGBA - colors (uint8)
-	// IJKL - quaternion/rot (uint8)
-	const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-	std::vector<float> lastProj;
-	std::vector<int> depthIndex;
-	int lastVertexCount = 0;
-
-
-	//private:
-	//var _floatView = new Float32Array(1);
-	//var _int32View = new Int32Array(_floatView.buffer);
-
-	int floatToHalf(float val) {
-		//_floatView[0] = float;
-		//var f = _int32View[0];
-			//val = 0.022582
-			//f = 1018756950
-
-		unsigned int f;
-		memcpy(&f, &val, 4);
-
-		int sign = (f >> 31) & 0x0001;
-		int exp = (f >> 23) & 0x00ff;
-		int frac = f & 0x007fffff;
-
-		//0, 121, 3735382
-
-		int newExp;
-		if (exp == 0) {
-			newExp = 0;
-		}
-		else if (exp < 113) {
-			newExp = 0;
-			frac |= 0x00800000;
-			frac = frac >> (113 - exp);
-			if (frac & 0x01000000) {
-				newExp = 1;
-				frac = 0;
-			}
-		}
-		else if (exp < 142) {
-			newExp = exp - 112;
-		}
-		else {
-			newExp = 31;
-			frac = 0;
-		}
-
-		return (sign << 15) | (newExp << 10) | (frac >> 13);
-	}
-
-	int packHalf2x16(float x, float y) {
-		return unsigned int(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
-	}
-
-
-	void generateTexture() {
-		if (buffer.empty()) return;
-
-		const std::vector<float> f_buffer = buffer;
-		//const std::vector<int> u_buffer = buffer;
-
-		int texwidth = 1024 * 2; // Set to your desired width
-		int texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-		std::vector<unsigned int> texdata(texwidth * texheight * 4); // 4 components per pixel (RGBA)
-		std::vector<unsigned char> texdata_c(texwidth * texheight * 4 * 4);
-		texdata_c = u_buffer;
-		std::vector<float> texdata_f(texwidth * texheight * 4);
-
-		// Here we convert from a .splat file buffer into a texture
-		// With a little bit more foresight perhaps this texture file
-		// should have been the native format as it'd be very easy to
-		// load it into webgl.
-		for (int i = 0; i < vertexCount; i++) {
-			// x, y, z
-			texdata_f[8 * i + 0] = f_buffer[8 * i + 0];
-			texdata_f[8 * i + 1] = f_buffer[8 * i + 1];
-			texdata_f[8 * i + 2] = f_buffer[8 * i + 2];
-
-			// r, g, b, a
-			texdata_c[4 * (8 * i + 7) + 0] = u_buffer[32 * i + 24 + 0];
-			texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
-			texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
-			texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
-
-			// quaternions
-			std::vector<float> scale = {
-					f_buffer[8 * i + 3 + 0],
-					f_buffer[8 * i + 3 + 1],
-					f_buffer[8 * i + 3 + 2],
-			};
-
-			std::vector<float> rot = {
-				(float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
-					(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
-					(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
-					(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f
-			};
-
-			// Compute the matrix product of S and R (M = S * R)
-			std::vector<float> M = {
-					1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]),
-					2.0f * (rot[1] * rot[2] + rot[0] * rot[3]),
-					2.0f * (rot[1] * rot[3] - rot[0] * rot[2]),
-
-					2.0f * (rot[1] * rot[2] - rot[0] * rot[3]),
-					1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]),
-					2.0f * (rot[2] * rot[3] + rot[0] * rot[1]),
-
-					2.0f * (rot[1] * rot[3] + rot[0] * rot[2]),
-					2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
-					1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
-			};
-			for (int i = 0; i < M.size(); i++) {
-				M[i] = M[i] * scale[std::floor(i / 3)];
-			}
-			//.map((k, i) = > k * scale[Math.floor(i / 3)]);
-
-			const std::vector<float> sigma = {
-				M[0] * M[0] + M[3] * M[3] + M[6] * M[6],
-					M[0] * M[1] + M[3] * M[4] + M[6] * M[7],
-					M[0] * M[2] + M[3] * M[5] + M[6] * M[8],
-					M[1] * M[1] + M[4] * M[4] + M[7] * M[7],
-					M[1] * M[2] + M[4] * M[5] + M[7] * M[8],
-					M[2] * M[2] + M[5] * M[5] + M[8] * M[8],
-			};
-
-			texdata[8 * i + 4] = packHalf2x16(4 * sigma[0], 4 * sigma[1]);
-			texdata[8 * i + 5] = packHalf2x16(4 * sigma[2], 4 * sigma[3]);
-			texdata[8 * i + 6] = packHalf2x16(4 * sigma[4], 4 * sigma[5]);
-		}
-
-		//self.postMessage({ texdata, texwidth, texheight }, [texdata.buffer]);
-	}
-
-	void runSort(std::vector<float> viewProj) {
-		if (buffer.empty()) return;
-
-		const std::vector<float> f_buffer = buffer;
-		if (lastVertexCount == vertexCount) {
-			float dot =
-				lastProj[2] * viewProj[2] +
-				lastProj[6] * viewProj[6] +
-				lastProj[10] * viewProj[10];
-			if (std::abs(dot - 1) < 0.01) {
-				return;
-			}
-		}
-		else {
-			generateTexture();
-			lastVertexCount = vertexCount;
-		}
-
-		//console.time("sort");
-		int maxDepth = INT_MIN;
-		int minDepth = INT_MAX;
-		std::vector<int> sizeList(vertexCount);
-		for (int i = 0; i < vertexCount; i++) {
-			int depth =
-				(viewProj[2] * f_buffer[8 * i + 0] +
-					viewProj[6] * f_buffer[8 * i + 1] +
-					viewProj[10] * f_buffer[8 * i + 2]) *
-				4096;
-			sizeList[i] = depth;
-			if (depth > maxDepth) maxDepth = depth;
-			if (depth < minDepth) minDepth = depth;
-		}
-
-		// This is a 16 bit single-pass counting sort
-		float depthInv = (256 * 256) / (maxDepth - minDepth);
-		std::vector<int> counts0(256 * 256);
-		for (int i = 0; i < vertexCount; i++) {
-			sizeList[i] = std::floor((sizeList[i] - minDepth) * depthInv);
-			counts0[sizeList[i]]++;
-		}
-		std::vector<int> starts0(256 * 256);
-		for (int i = 1; i < 256 * 256; i++)
-			starts0[i] = starts0[i - 1] + counts0[i - 1];
-		std::vector<int> depthIndex(vertexCount);
-		for (int i = 0; i < vertexCount; i++)
-			depthIndex[starts0[sizeList[i]]++] = i;
-
-		//console.timeEnd("sort");
-
-		lastProj = viewProj;
-		//self.postMessage({ depthIndex, viewProj, vertexCount }, [
-		//	depthIndex.buffer,
-	//	]);
-	}
-
-
-	bool sortRunning = false;
-
-	void throttledSort() {
-		if (!sortRunning) {
-			sortRunning = true;
-			std::vector<float> lastView = viewProj;
-			runSort(lastView);
-			//	setTimeout(() = > {
-				//	sortRunning = false;
-			//		if (lastView != = viewProj) { // when the view changes, we should re-do the sort
-				//		throttledSort();
-				//	}
-				//}, 0);
-		}
-	};
-
-	void setBuffer(const std::vector<float>& newbuffer, const std::vector<unsigned char>& orignialSplatData, int newvertexCount)
-	{
-		buffer = newbuffer;
-		u_buffer = orignialSplatData;
-		vertexCount = newvertexCount;
-	}
-
-	void setVertexCount(int newvertexCount)
-	{
-		vertexCount = newvertexCount;
-	}
-
-	void setView(const std::vector<float> newviewProj)
-	{
-		viewProj = newviewProj;
-		throttledSort();
-	}
-
-	/*self.onmessage = (e) = > {
-		if (e.data.ply) {
-			vertexCount = 0;
-			runSort(viewProj);
-			buffer = processPlyBuffer(e.data.ply);
-			vertexCount = Math.floor(buffer.byteLength / rowLength);
-			postMessage({ buffer: buffer });
-		}
-		else if (e.data.buffer) {
-			buffer = e.data.buffer;
-			vertexCount = e.data.vertexCount;
-		}
-		else if (e.data.vertexCount) {
-			vertexCount = e.data.vertexCount;
-		}
-		else if (e.data.view) {
-			viewProj = e.data.view;
-			throttledSort();
-		}
-	};*/
-
-
-
-};
 
 static camera baseCamera = { 0,1959,1090,{
 			-3.0089893469241797f, -0.11086489695181866f, -3.7527640949141428f},
@@ -440,6 +183,8 @@ static const std::vector<float> defaultViewMatrix = {
 };
 
 static std::vector<float>  viewMatrix = defaultViewMatrix;
+
+
 
 class GLWindowSplat : public QOpenGLWindow {
 	Q_OBJECT
@@ -463,8 +208,272 @@ public:
 	float r2() const { return m_r2; }
 	void setR2(float v);
 
-	void fromWorkerAddTexData(std::vector<float> texData);
-	void fromWorkderDepthIndex(int depthIdex);
+
+	void setTextureData(std::vector<unsigned int> texdata, int texwidth, int texheight);
+	void setDepthIndex(std::vector<unsigned int> depthIndex, std::vector<float> viewProj, int vertexCount);
+
+
+	struct worker {
+		worker(GLWindowSplat* parent) : m_glwindow(parent) {}
+		GLWindowSplat* m_glwindow;
+		std::vector<float> buffer;
+		std::vector<unsigned char> u_buffer;
+		int vertexCount = 0;
+		std::vector<float> viewProj;
+		// 6*4 + 4 + 4 = 8*4
+		// XYZ - Position (Float32)
+		// XYZ - Scale (Float32)
+		// RGBA - colors (uint8)
+		// IJKL - quaternion/rot (uint8)
+		const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+		std::vector<float> lastProj;
+		std::vector<int> depthIndex;
+		int lastVertexCount = 0;
+
+
+		//private:
+		//var _floatView = new Float32Array(1);
+		//var _int32View = new Int32Array(_floatView.buffer);
+
+		int floatToHalf(float val) {
+			//_floatView[0] = float;
+			//var f = _int32View[0];
+				//val = 0.022582
+				//f = 1018756950
+
+			unsigned int f;
+			memcpy(&f, &val, 4);
+
+			int sign = (f >> 31) & 0x0001;
+			int exp = (f >> 23) & 0x00ff;
+			int frac = f & 0x007fffff;
+
+			//0, 121, 3735382
+
+			int newExp;
+			if (exp == 0) {
+				newExp = 0;
+			}
+			else if (exp < 113) {
+				newExp = 0;
+				frac |= 0x00800000;
+				frac = frac >> (113 - exp);
+				if (frac & 0x01000000) {
+					newExp = 1;
+					frac = 0;
+				}
+			}
+			else if (exp < 142) {
+				newExp = exp - 112;
+			}
+			else {
+				newExp = 31;
+				frac = 0;
+			}
+
+			return (sign << 15) | (newExp << 10) | (frac >> 13);
+		}
+
+		int packHalf2x16(float x, float y) {
+			return unsigned int(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
+		}
+
+
+		void generateTexture() {
+			if (buffer.empty()) return;
+
+			const std::vector<float> f_buffer = buffer;
+			//const std::vector<int> u_buffer = buffer;
+
+			int texwidth = 1024 * 2; // Set to your desired width
+			int texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
+			std::vector<unsigned int> texdata(texwidth * texheight * 4); // 4 components per pixel (RGBA)
+			std::vector<unsigned char> texdata_c(texwidth * texheight * 4 * 4);
+			texdata_c = u_buffer;
+			std::vector<float> texdata_f(texwidth * texheight * 4);
+
+			// Here we convert from a .splat file buffer into a texture
+			// With a little bit more foresight perhaps this texture file
+			// should have been the native format as it'd be very easy to
+			// load it into webgl.
+			for (int i = 0; i < vertexCount; i++) {
+				// x, y, z
+				texdata_f[8 * i + 0] = f_buffer[8 * i + 0];
+				texdata_f[8 * i + 1] = f_buffer[8 * i + 1];
+				texdata_f[8 * i + 2] = f_buffer[8 * i + 2];
+
+				// r, g, b, a
+				texdata_c[4 * (8 * i + 7) + 0] = u_buffer[32 * i + 24 + 0];
+				texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
+				texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
+				texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
+
+				// quaternions
+				std::vector<float> scale = {
+						f_buffer[8 * i + 3 + 0],
+						f_buffer[8 * i + 3 + 1],
+						f_buffer[8 * i + 3 + 2],
+				};
+
+				std::vector<float> rot = {
+					(float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
+						(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
+						(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
+						(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f
+				};
+
+				// Compute the matrix product of S and R (M = S * R)
+				std::vector<float> M = {
+						1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]),
+						2.0f * (rot[1] * rot[2] + rot[0] * rot[3]),
+						2.0f * (rot[1] * rot[3] - rot[0] * rot[2]),
+
+						2.0f * (rot[1] * rot[2] - rot[0] * rot[3]),
+						1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]),
+						2.0f * (rot[2] * rot[3] + rot[0] * rot[1]),
+
+						2.0f * (rot[1] * rot[3] + rot[0] * rot[2]),
+						2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
+						1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
+				};
+				for (int i = 0; i < M.size(); i++) {
+					M[i] = M[i] * scale[std::floor(i / 3)];
+				}
+				//.map((k, i) = > k * scale[Math.floor(i / 3)]);
+
+				const std::vector<float> sigma = {
+					M[0] * M[0] + M[3] * M[3] + M[6] * M[6],
+						M[0] * M[1] + M[3] * M[4] + M[6] * M[7],
+						M[0] * M[2] + M[3] * M[5] + M[6] * M[8],
+						M[1] * M[1] + M[4] * M[4] + M[7] * M[7],
+						M[1] * M[2] + M[4] * M[5] + M[7] * M[8],
+						M[2] * M[2] + M[5] * M[5] + M[8] * M[8],
+				};
+
+				texdata[8 * i + 4] = packHalf2x16(4 * sigma[0], 4 * sigma[1]);
+				texdata[8 * i + 5] = packHalf2x16(4 * sigma[2], 4 * sigma[3]);
+				texdata[8 * i + 6] = packHalf2x16(4 * sigma[4], 4 * sigma[5]);
+			}
+
+			m_glwindow->setTextureData(texdata, texwidth, texheight);
+			//self.postMessage({ texdata, texwidth, texheight }, [texdata.buffer]);
+		}
+
+		void runSort(std::vector<float> viewProj) {
+			if (buffer.empty()) return;
+
+			const std::vector<float> f_buffer = buffer;
+			if (lastVertexCount == vertexCount) {
+				float dot =
+					lastProj[2] * viewProj[2] +
+					lastProj[6] * viewProj[6] +
+					lastProj[10] * viewProj[10];
+				if (std::abs(dot - 1) < 0.01) {
+					return;
+				}
+			}
+			else {
+				generateTexture();
+				lastVertexCount = vertexCount;
+			}
+
+			//console.time("sort");
+			int maxDepth = INT_MIN;
+			int minDepth = INT_MAX;
+			std::vector<int> sizeList(vertexCount);
+			for (int i = 0; i < vertexCount; i++) {
+				int depth =
+					(viewProj[2] * f_buffer[8 * i + 0] +
+						viewProj[6] * f_buffer[8 * i + 1] +
+						viewProj[10] * f_buffer[8 * i + 2]) *
+					4096;
+				sizeList[i] = depth;
+				if (depth > maxDepth) maxDepth = depth;
+				if (depth < minDepth) minDepth = depth;
+			}
+
+			// This is a 16 bit single-pass counting sort
+			float depthInv = (256 * 256) / (maxDepth - minDepth);
+			std::vector<int> counts0(256 * 256);
+			for (int i = 0; i < vertexCount; i++) {
+				sizeList[i] = std::floor((sizeList[i] - minDepth) * depthInv);
+				counts0[sizeList[i]]++;
+			}
+			std::vector<int> starts0(256 * 256);
+			for (int i = 1; i < 256 * 256; i++)
+				starts0[i] = starts0[i - 1] + counts0[i - 1];
+			std::vector<unsigned int> depthIndex(vertexCount);
+			for (int i = 0; i < vertexCount; i++)
+				depthIndex[starts0[sizeList[i]]++] = i;
+
+			//console.timeEnd("sort");
+
+			lastProj = viewProj;
+			m_glwindow->setDepthIndex(depthIndex, viewProj, vertexCount);
+			//self.postMessage({ depthIndex, viewProj, vertexCount }, [
+			//	depthIndex.buffer,
+		//	]);
+		}
+
+
+		bool sortRunning = false;
+
+		void throttledSort() {
+			if (!sortRunning) {
+				sortRunning = true;
+				std::vector<float> lastView = viewProj;
+				runSort(lastView);
+				//	setTimeout(() = > {
+					//	sortRunning = false;
+				//		if (lastView != = viewProj) { // when the view changes, we should re-do the sort
+					//		throttledSort();
+					//	}
+					//}, 0);
+			}
+		};
+
+		void setBuffer(const std::vector<float>& newbuffer, const std::vector<unsigned char>& orignialSplatData, int newvertexCount)
+		{
+			buffer = newbuffer;
+			u_buffer = orignialSplatData;
+			vertexCount = newvertexCount;
+		}
+
+		void setVertexCount(int newvertexCount)
+		{
+			vertexCount = newvertexCount;
+		}
+
+		void setView(const std::vector<float> newviewProj)
+		{
+			viewProj = newviewProj;
+			throttledSort();
+		}
+
+		/*self.onmessage = (e) = > {
+			if (e.data.ply) {
+				vertexCount = 0;
+				runSort(viewProj);
+				buffer = processPlyBuffer(e.data.ply);
+				vertexCount = Math.floor(buffer.byteLength / rowLength);
+				postMessage({ buffer: buffer });
+			}
+			else if (e.data.buffer) {
+				buffer = e.data.buffer;
+				vertexCount = e.data.vertexCount;
+			}
+			else if (e.data.vertexCount) {
+				vertexCount = e.data.vertexCount;
+			}
+			else if (e.data.view) {
+				viewProj = e.data.view;
+				throttledSort();
+			}
+		};*/
+
+
+
+	};
 
 private slots:
 	void startSecondStage();
@@ -474,6 +483,8 @@ private:
 	QOpenGLShaderProgram* m_program = nullptr;
 	QOpenGLBuffer* m_vbo = nullptr;
 	QOpenGLVertexArrayObject* m_vao = nullptr;
+
+	QOpenGLBuffer m_indexBuffer;
 
 
 	int m_projMatrixLoc = 0;
@@ -493,8 +504,6 @@ private:
 	worker m_worker;
 	std::vector<float> m_projectionMatrix;
 
-	void resize();
-	void frame();
 };
 
 #endif
