@@ -298,15 +298,21 @@ public:
 			// load it into webgl.
 			for (int i = 0; i < vertexCount; i++) {
 				// x, y, z
-				texdata_f[8 * i + 0] = f_buffer[8 * i + 0];
-				texdata_f[8 * i + 1] = f_buffer[8 * i + 1];
-				texdata_f[8 * i + 2] = f_buffer[8 * i + 2];
+				unsigned int valx, valy, valz;
+				memcpy(&valx, &f_buffer[8 * i + 0], 4);
+				memcpy(&valy, &f_buffer[8 * i + 1], 4);
+				memcpy(&valz, &f_buffer[8 * i + 2], 4);
+				texdata[8 * i + 0] = valx;
+				texdata[8 * i + 1] = valy;
+				texdata[8 * i + 2] = valz;
 
 				// r, g, b, a
-				texdata_c[4 * (8 * i + 7) + 0] = u_buffer[32 * i + 24 + 0];
-				texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
-				texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
-				texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
+				unsigned int r, g, b, a;
+				memcpy(&r, &u_buffer[32 * i + 24 + 0], 4);
+				texdata[(8 * i + 7) + 0] = r;
+				//texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
+				//texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
+				//texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
 
 				// quaternions
 				std::vector<float> scale = {
