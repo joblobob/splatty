@@ -429,6 +429,7 @@ public:
 				sortRunning = true;
 				std::vector<float> lastView = viewProj;
 				runSort(lastView);
+				sortRunning = false;
 				//	setTimeout(() = > {
 					//	sortRunning = false;
 				//		if (lastView != = viewProj) { // when the view changes, we should re-do the sort

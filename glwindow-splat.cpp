@@ -10,6 +10,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
 #include <QOpenGlContext>
+#include <QOpenGLDebugLogger>
 #include <QOpenGLVertexArrayObject>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
@@ -210,6 +211,10 @@ void GLWindowSplat::initializeGL()
 		m_worker.setBuffer(newData, originalData, (originalData.size() / rowLength));
 
 		QOpenGLContext* gl = QOpenGLContext::currentContext();
+		QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
+		connect(logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << "OpenGLDebug: " << debugMessage; });
+		qCritical() << "did we debug?" << logger->initialize(); // initializes in the current context, i.e. ctx
+		logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
 
 		QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 
@@ -245,7 +250,8 @@ void GLWindowSplat::initializeGL()
 		const int a_position = m_program->attributeLocation("position");
 		f->glEnableVertexAttribArray(a_position);
 		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
-		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, false, 0, 0);
+		//1ere erreur de opengl!!
+		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, false, 0, &m_vertexBuffer);
 
 		m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
 		f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());

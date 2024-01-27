@@ -22,6 +22,7 @@ int main(int argc, char* argv[])
 
 	QSurfaceFormat fmt;
 	fmt.setDepthBufferSize(24);
+	fmt.setOption(QSurfaceFormat::DebugContext);
 
 	// Request OpenGL 3.3 core or OpenGL ES 3.0.
 	if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
@@ -40,6 +41,7 @@ int main(int argc, char* argv[])
 	glWindow.show();
 
 	GLWindowSplat glWindowSplat;
+	glWindowSplat.resize(1024, 768);
 	glWindowSplat.show();
 
 	return app.exec();
