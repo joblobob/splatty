@@ -491,6 +491,7 @@ private:
 	QOpenGLVertexArrayObject* m_vao = nullptr;
 
 	QOpenGLBuffer m_indexBuffer;
+	QOpenGLBuffer m_vertexBuffer;
 
 
 	int m_projMatrixLoc = 0;

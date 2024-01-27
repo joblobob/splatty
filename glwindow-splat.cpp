@@ -237,14 +237,14 @@ void GLWindowSplat::initializeGL()
 
 		// positions
 		const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
-		QOpenGLBuffer vertexBuffer;
-		vertexBuffer.create();
 
-		f->glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.bufferId());
+		m_vertexBuffer.create();
+
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
 		f->glBufferData(GL_ARRAY_BUFFER, 8, triangleVertices.data(), GL_STATIC_DRAW);
 		const int a_position = m_program->attributeLocation("position");
 		f->glEnableVertexAttribArray(a_position);
-		f->glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.bufferId());
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
 		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, false, 0, 0);
 
 		m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
