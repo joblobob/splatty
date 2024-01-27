@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
 
 	QSurfaceFormat::setDefaultFormat(fmt);
 
-	GLWindow glWindow;
-	glWindow.show();
+	//GLWindow glWindow;
+	//glWindow.show();
 
 	GLWindowSplat glWindowSplat;
 	glWindowSplat.resize(1024, 768);
