@@ -230,6 +230,12 @@ void GLWindowSplat::initializeGL()
 
 		qCritical() << "hola" << isVertexOk << isFragmentOk << isLinked << isBoundProgram;
 
+		// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
+		delete m_vao;
+		m_vao = new QOpenGLVertexArrayObject(gl);
+		if (m_vao->create())
+			m_vao->bind();
+
 		f->glDisable(GL_DEPTH_TEST); // Disable depth testing
 
 		f->glEnable(GL_BLEND);
@@ -250,8 +256,7 @@ void GLWindowSplat::initializeGL()
 		const int a_position = m_program->attributeLocation("position");
 		f->glEnableVertexAttribArray(a_position);
 		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
-		//1ere erreur de opengl!!
-		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, false, 0, &m_vertexBuffer);
+		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
 		m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
 		f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
@@ -302,15 +307,15 @@ void GLWindowSplat::resizeGL(int w, int h)
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 
 	GLfloat tabFloat[] = { baseCamera.fx,  baseCamera.fy };
-	f->glUniform2fv(m_focalLoc, 2, tabFloat);
+	f->glUniform2fv(m_focalLoc, 1, tabFloat);
 
 	m_projectionMatrix = getProjectionMatrix(baseCamera.fx, baseCamera.fy, w, h);
 
 	GLfloat innerTab[] = { static_cast<float>(w),  static_cast<float>(h) };
-	f->glUniform2fv(m_viewPortLoc, 2, innerTab);
+	f->glUniform2fv(m_viewPortLoc, 1, innerTab);
 
 	f->glViewport(0, 0, w, h);
-	f->glUniformMatrix4fv(m_projMatrixLoc, 16, false, m_projectionMatrix.data());
+	f->glUniformMatrix4fv(m_projMatrixLoc, 1, false, m_projectionMatrix.data());
 }
 
 void GLWindowSplat::paintGL()
@@ -330,7 +335,7 @@ void GLWindowSplat::paintGL()
 
 	// fps calculations
 	if (m_worker.vertexCount > 0) {
-		f->glUniformMatrix4fv(m_viewLoc, 16, false, viewMatrix.data());
+		f->glUniformMatrix4fv(m_viewLoc, 1, false, viewMatrix.data());
 		f->glClear(GL_COLOR_BUFFER_BIT);
 		QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, m_worker.vertexCount);
 	}
