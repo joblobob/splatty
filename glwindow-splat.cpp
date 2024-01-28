@@ -57,6 +57,49 @@ GLWindowSplat::GLWindowSplat() : m_worker(this)
 	rAnim->start();
 
 	QTimer::singleShot(4000, this, &GLWindowSplat::startSecondStage);
+
+
+
+
+	//example struff finished
+
+	// Construct a data object by reading from file
+	constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+
+	/*const int downsample =
+		splatData.size() / rowLength > 500000 ? 1 : 1 / 2/*devicePixelRatio*/;
+		/*
+		qCritical("start init");
+		qCritical() << downsample;
+		qCritical() << splatData.size() / rowLength;
+		qCritical() << splatData.size(); */
+
+		std::vector<float> projectionMatrix;
+
+		std::vector<float> newData;
+		std::vector<unsigned char> originalData;
+
+		QFile splatFile("plush.splat");
+		splatFile.open(QIODevice::ReadOnly);
+		qCritical() << newData.size();
+		QByteArray splatData = splatFile.readAll();
+		splatFile.close();
+
+		for (const unsigned char data : splatData) {
+			originalData.push_back(data);
+		}
+
+
+		for (int i = 0; i < splatData.size(); i += 4) {
+			float f;
+			uchar b[] = { splatData[i + 0], splatData[i + 1], splatData[i + 2], splatData[i + 3] };
+			memcpy(&f, &b, sizeof(f));
+			newData.push_back(f);
+		}
+
+
+
+		m_worker.setBuffer(newData, originalData, (originalData.size() / rowLength));
 }
 
 GLWindowSplat::~GLWindowSplat()
@@ -170,138 +213,73 @@ QByteArray versionedShaderCodehere(const char* src)
 void GLWindowSplat::initializeGL()
 {
 
-	// Construct a data object by reading from file
+	QOpenGLContext* gl = QOpenGLContext::currentContext();
+	QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
+	connect(logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << "OpenGLDebug: " << debugMessage; });
+	logger->initialize(); // initializes in the current context, i.e. ctx
+	logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
 
+	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 
-	constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+	delete m_program;
+	m_program = new QOpenGLShaderProgram;
+	// Prepend the correct version directive to the sources. The rest is the
+	// same, thanks to the common GLSL syntax.
+	bool isVertexOk = m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, versionedShaderCodehere(vertexShaderSource));
+	bool isFragmentOk = m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, versionedShaderCodehere(fragmentShaderSource));
+	bool isLinked = m_program->link();
 
-	/*const int downsample =
-		splatData.size() / rowLength > 500000 ? 1 : 1 / 2/*devicePixelRatio*/;
-		/*
-		qCritical("start init");
-		qCritical() << downsample;
-		qCritical() << splatData.size() / rowLength;
-		qCritical() << splatData.size(); */
+	bool isBoundProgram = m_program->bind();
 
-		std::vector<float> projectionMatrix;
+	qCritical() << "hola" << isVertexOk << isFragmentOk << isLinked << isBoundProgram;
 
-		std::vector<float> newData;
-		std::vector<unsigned char> originalData;
+	// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
+	delete m_vao;
+	m_vao = new QOpenGLVertexArrayObject(gl);
+	if (m_vao->create())
+		m_vao->bind();
 
-		QFile splatFile("plush.splat");
-		splatFile.open(QIODevice::ReadOnly);
-		qCritical() << newData.size();
-		QByteArray splatData = splatFile.readAll();
-		splatFile.close();
+	f->glDisable(GL_DEPTH_TEST); // Disable depth testing
 
-		for (const unsigned char data : splatData) {
-			originalData.push_back(data);
-		}
+	f->glEnable(GL_BLEND);
+	f->glBlendFuncSeparate(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
 
+	m_projMatrixLoc = m_program->uniformLocation("projection");
+	m_viewPortLoc = m_program->uniformLocation("viewport");
+	m_focalLoc = m_program->uniformLocation("focal");
+	m_viewLoc = m_program->uniformLocation("view");
 
-		for (int i = 0; i < splatData.size(); i += 4) {
-			float f;
-			uchar b[] = { splatData[i + 0], splatData[i + 1], splatData[i + 2], splatData[i + 3] };
-			memcpy(&f, &b, sizeof(f));
-			newData.push_back(f);
-		}
+	// positions
+	const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
 
+	m_vertexBuffer.create();
 
+	f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
+	f->glBufferData(GL_ARRAY_BUFFER, 8 * 4, triangleVertices.data(), GL_STATIC_DRAW);
+	const int a_position = m_program->attributeLocation("position");
+	f->glEnableVertexAttribArray(a_position);
+	f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
+	f->glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-		m_worker.setBuffer(newData, originalData, (originalData.size() / rowLength));
+	m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
+	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
 
-		QOpenGLContext* gl = QOpenGLContext::currentContext();
-		QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
-		connect(logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << "OpenGLDebug: " << debugMessage; });
-		qCritical() << "did we debug?" << logger->initialize(); // initializes in the current context, i.e. ctx
-		logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
+	auto u_textureLocation = m_program->uniformLocation("u_texture");
+	f->glUniform1i(u_textureLocation, 0);
 
-		QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	m_indexBuffer.create();
+	const int a_index = m_program->attributeLocation("index");
+	f->glEnableVertexAttribArray(a_index);
+	f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
+	gl->extraFunctions()->glVertexAttribIPointer(a_index, 1, GL_INT, false, 0);
+	gl->extraFunctions()->glVertexAttribDivisor(a_index, 1);
 
-		delete m_program;
-		m_program = new QOpenGLShaderProgram;
-		// Prepend the correct version directive to the sources. The rest is the
-		// same, thanks to the common GLSL syntax.
-		bool isVertexOk = m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, versionedShaderCodehere(vertexShaderSource));
-		bool isFragmentOk = m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, versionedShaderCodehere(fragmentShaderSource));
-		bool isLinked = m_program->link();
-
-		bool isBoundProgram = m_program->bind();
-
-		qCritical() << "hola" << isVertexOk << isFragmentOk << isLinked << isBoundProgram;
-
-		// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
-		delete m_vao;
-		m_vao = new QOpenGLVertexArrayObject(gl);
-		if (m_vao->create())
-			m_vao->bind();
-
-		f->glDisable(GL_DEPTH_TEST); // Disable depth testing
-
-		f->glEnable(GL_BLEND);
-		f->glBlendFuncSeparate(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
-
-		m_projMatrixLoc = m_program->uniformLocation("projection");
-		m_viewPortLoc = m_program->uniformLocation("viewport");
-		m_focalLoc = m_program->uniformLocation("focal");
-		m_viewLoc = m_program->uniformLocation("view");
-
-		// positions
-		const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
-
-		m_vertexBuffer.create();
-
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
-		f->glBufferData(GL_ARRAY_BUFFER, 8, triangleVertices.data(), GL_STATIC_DRAW);
-		const int a_position = m_program->attributeLocation("position");
-		f->glEnableVertexAttribArray(a_position);
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
-		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
-		f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
-
-		auto u_textureLocation = m_program->uniformLocation("u_texture");
-		f->glUniform1i(u_textureLocation, 0);
-
-		m_indexBuffer.create();
-		const int a_index = m_program->attributeLocation("index");
-		f->glEnableVertexAttribArray(a_index);
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
-		gl->extraFunctions()->glVertexAttribIPointer(a_index, 1, GL_INT, false, 0);
-		gl->extraFunctions()->glVertexAttribDivisor(a_index, 1);
-
-		//jusquici inittialize!
-
-
-		// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
-		/*delete m_vao;
-		m_vao = new QOpenGLVertexArrayObject;
-		if (m_vao->create())
-			m_vao->bind();
-
-
-		delete m_vbo;
-		m_vbo = new QOpenGLBuffer;
-		m_vbo->create();
-		m_vbo->bind();
-		m_vbo->allocate(splatData.data(), splatData.size() * sizeof(GLubyte));
-		f->glEnableVertexAttribArray(0);
-		f->glEnableVertexAttribArray(1);
-		f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
-			nullptr);
-		f->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),
-			reinterpret_cast<void*>(3 * sizeof(GLfloat)));
-		m_vbo->release();
-
-		f->glEnable(GL_DEPTH_TEST);
-		f->glEnable(GL_CULL_FACE);*/
 }
 
 void GLWindowSplat::resizeGL(int w, int h)
 {
-	m_proj.setToIdentity();
-	m_proj.perspective(45.0f, GLfloat(w) / h, 0.01f, 100.0f);
+	//m_proj.setToIdentity();
+	//m_proj.perspective(45.0f, GLfloat(w) / h, 0.01f, 100.0f);
 	m_uniformsDirty = true;
 
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
@@ -343,33 +321,6 @@ void GLWindowSplat::paintGL()
 		f->glClear(GL_COLOR_BUFFER_BIT);
 	}
 
-
-
-	/*	f->glClearColor(0, 0, 0, 1);
-		f->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		m_program->bind();
-		//m_texture->bind();
-
-		if (m_uniformsDirty) {
-			m_uniformsDirty = false;
-			QMatrix4x4 camera;
-			camera.lookAt(m_eye, m_eye + m_target, QVector3D(0, 1, 0));
-			m_program->setUniformValue(m_projMatrixLoc, m_proj);
-			m_program->setUniformValue(m_focalLoc, camera);
-			QMatrix4x4 wm = m_world;
-			wm.rotate(m_r, 1, 1, 0);
-			m_program->setUniformValue(m_viewPortLoc, wm);
-			QMatrix4x4 mm;
-			mm.setToIdentity();
-			mm.rotate(-m_r2, 1, 0, 0);
-			m_program->setUniformValue(m_projMatrixLoc, mm);
-			m_program->setUniformValue(m_lightPosLoc, QVector3D(0, 0, 70));
-		}
-		const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-		// Now call a function introduced in OpenGL 3.1 / OpenGL ES 3.0. We
-		// requested a 3.3 or ES 3.0 context, so we know this will work.
-		f->glDrawArraysInstanced(GL_TRIANGLES, 0, rowLength, 32 * 36);*/
 }
 
 void GLWindowSplat::setTextureData(std::vector<unsigned int> texdata, int texwidth, int texheight)
