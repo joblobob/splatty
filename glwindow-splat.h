@@ -178,8 +178,10 @@ static camera baseCamera = { 0,1959,1090,{
 		1159.5880733038064 };
 
 static const std::vector<float> defaultViewMatrix = {
-	0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07,
-		0.03, 6.55, 1
+	0.47, 0.04, 0.88, 0,
+	-0.11, 0.99, 0.02, 0,
+	-0.88, -0.11, 0.47, 0,
+	0.07, 0.03, 6.55, 1
 };
 
 static std::vector<float>  viewMatrix = defaultViewMatrix;
@@ -283,14 +285,10 @@ public:
 			if (buffer.empty()) return;
 
 			const std::vector<float> f_buffer = buffer;
-			//const std::vector<int> u_buffer = buffer;
 
 			int texwidth = 1024 * 2; // Set to your desired width
 			int texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
 			std::vector<unsigned int> texdata(texwidth * texheight * 4); // 4 components per pixel (RGBA)
-			std::vector<unsigned char> texdata_c(texwidth * texheight * 4 * 4);
-			texdata_c = u_buffer;
-			std::vector<float> texdata_f(texwidth * texheight * 4);
 
 			// Here we convert from a .splat file buffer into a texture
 			// With a little bit more foresight perhaps this texture file
@@ -307,12 +305,9 @@ public:
 				texdata[8 * i + 2] = valz;
 
 				// r, g, b, a
-				unsigned int r, g, b, a;
-				memcpy(&r, &u_buffer[32 * i + 24 + 0], 4);
-				texdata[(8 * i + 7) + 0] = r;
-				//texdata_c[4 * (8 * i + 7) + 1] = u_buffer[32 * i + 24 + 1];
-				//texdata_c[4 * (8 * i + 7) + 2] = u_buffer[32 * i + 24 + 2];
-				//texdata_c[4 * (8 * i + 7) + 3] = u_buffer[32 * i + 24 + 3];
+				unsigned int valrgba;
+				memcpy(&valrgba, &u_buffer[32 * i + 24 + 0], 4);
+				texdata[(8 * i + 7) + 0] = valrgba;
 
 				// quaternions
 				std::vector<float> scale = {
@@ -345,7 +340,6 @@ public:
 				for (int i = 0; i < M.size(); i++) {
 					M[i] = M[i] * scale[std::floor(i / 3)];
 				}
-				//.map((k, i) = > k * scale[Math.floor(i / 3)]);
 
 				const std::vector<float> sigma = {
 					M[0] * M[0] + M[3] * M[3] + M[6] * M[6],
@@ -362,7 +356,6 @@ public:
 			}
 
 			m_glwindow->setTextureData(texdata, texwidth, texheight);
-			//self.postMessage({ texdata, texwidth, texheight }, [texdata.buffer]);
 		}
 
 		void runSort(std::vector<float> viewProj) {
@@ -416,9 +409,6 @@ public:
 
 			lastProj = viewProj;
 			m_glwindow->setDepthIndex(depthIndex, viewProj, vertexCount);
-			//self.postMessage({ depthIndex, viewProj, vertexCount }, [
-			//	depthIndex.buffer,
-		//	]);
 		}
 
 

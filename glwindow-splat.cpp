@@ -305,6 +305,7 @@ void GLWindowSplat::paintGL()
 	auto inv = invert4(viewMatrix);
 
 	// code a propos des activeskeys pas ré-écrit
+	//inv = rotate4(inv, -0.6f * std::sin(16.0f / 5000.5f), 0, 1, 0);
 
 	viewMatrix = invert4(inv);
 
