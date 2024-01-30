@@ -324,7 +324,7 @@ void GLWindowSplat::paintGL()
 
 }
 
-void GLWindowSplat::setTextureData(std::vector<unsigned int> texdata, int texwidth, int texheight)
+void GLWindowSplat::setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight)
 {
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
@@ -342,7 +342,7 @@ void GLWindowSplat::setTextureData(std::vector<unsigned int> texdata, int texwid
 
 
 
-void GLWindowSplat::setDepthIndex(std::vector<unsigned int> depthIndex, std::vector<float> viewProj, int vertexCount) {
+void GLWindowSplat::setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount) {
 	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
 
 	f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());

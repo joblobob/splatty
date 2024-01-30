@@ -60,7 +60,7 @@ static std::vector<float> getViewMatrix(camera camera) {
 	};
 }
 
-static std::vector<float> multiply4(std::vector<float> a, std::vector<float> b) {
+static std::vector<float> multiply4(const std::vector<float>& a, const std::vector<float>& b) {
 	return{
 		b[0] * a[0] + b[1] * a[4] + b[2] * a[8] + b[3] * a[12],
 			b[0] * a[1] + b[1] * a[5] + b[2] * a[9] + b[3] * a[13],
@@ -82,7 +82,7 @@ static std::vector<float> multiply4(std::vector<float> a, std::vector<float> b) 
 }
 
 static
-std::vector<float> invert4(std::vector<float> a) {
+std::vector<float> invert4(const std::vector<float>& a) {
 	float b00 = a[0] * a[5] - a[1] * a[4];
 	float b01 = a[0] * a[6] - a[2] * a[4];
 	float b02 = a[0] * a[7] - a[3] * a[4];
@@ -120,7 +120,7 @@ std::vector<float> invert4(std::vector<float> a) {
 }
 
 static
-std::vector<float> rotate4(std::vector<float> a, float rad, float x, float y, float z) {
+std::vector<float> rotate4(const std::vector<float>& a, float rad, float x, float y, float z) {
 	float len = std::hypot(x, y, z);
 	x /= len;
 	y /= len;
@@ -155,7 +155,7 @@ std::vector<float> rotate4(std::vector<float> a, float rad, float x, float y, fl
 	};
 }
 
-static std::vector<float> translate4(std::vector<float> a, float x, float y, float z) {
+static std::vector<float> translate4(const std::vector<float>& a, float x, float y, float z) {
 	return{
 		//...a.slice(0, 12),
 			a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11],
@@ -211,8 +211,8 @@ public:
 	void setR2(float v);
 
 
-	void setTextureData(std::vector<unsigned int> texdata, int texwidth, int texheight);
-	void setDepthIndex(std::vector<unsigned int> depthIndex, std::vector<float> viewProj, int vertexCount);
+	void setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight);
+	void setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount);
 
 
 	struct worker {
@@ -358,7 +358,7 @@ public:
 			m_glwindow->setTextureData(texdata, texwidth, texheight);
 		}
 
-		void runSort(std::vector<float> viewProj) {
+		void runSort(const std::vector<float>& viewProj) {
 			if (buffer.empty()) return;
 
 			const std::vector<float> f_buffer = buffer;
@@ -417,7 +417,7 @@ public:
 		void throttledSort() {
 			if (!sortRunning) {
 				sortRunning = true;
-				std::vector<float> lastView = viewProj;
+				const std::vector<float> lastView = viewProj;
 				runSort(lastView);
 				sortRunning = false;
 				//	setTimeout(() = > {
@@ -441,7 +441,7 @@ public:
 			vertexCount = newvertexCount;
 		}
 
-		void setView(const std::vector<float> newviewProj)
+		void setView(const std::vector<float>& newviewProj)
 		{
 			viewProj = newviewProj;
 			throttledSort();
