@@ -219,7 +219,7 @@ void GLWindowSplat::initializeGL()
 	logger->initialize(); // initializes in the current context, i.e. ctx
 	logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
 
-	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 	delete m_program;
 	m_program = new QOpenGLShaderProgram;
@@ -282,7 +282,7 @@ void GLWindowSplat::resizeGL(int w, int h)
 	//m_proj.perspective(45.0f, GLfloat(w) / h, 0.01f, 100.0f);
 	m_uniformsDirty = true;
 
-	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 	GLfloat tabFloat[] = { baseCamera.fx,  baseCamera.fy };
 	f->glUniform2fv(m_focalLoc, 1, tabFloat);
@@ -300,7 +300,7 @@ void GLWindowSplat::paintGL()
 {
 	// Now use QOpenGLExtraFunctions instead of QOpenGLFunctions as we want to
 	// do more than what GL(ES) 2.0 offers.
-	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 	auto inv = invert4(viewMatrix);
 
@@ -326,7 +326,7 @@ void GLWindowSplat::paintGL()
 
 void GLWindowSplat::setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight)
 {
-	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
 	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -343,8 +343,8 @@ void GLWindowSplat::setTextureData(const std::vector<unsigned int>& texdata, int
 
 
 void GLWindowSplat::setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount) {
-	QOpenGLFunctions* f = QOpenGLContext::currentContext()->functions();
+	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 	f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
-	QOpenGLContext::currentContext()->extraFunctions()->glBufferData(GL_ARRAY_BUFFER, depthIndex.size() * 4, depthIndex.data(), GL_DYNAMIC_DRAW);
+	f->glBufferData(GL_ARRAY_BUFFER, depthIndex.size() * 4, depthIndex.data(), GL_DYNAMIC_DRAW);
 }
