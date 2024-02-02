@@ -1,27 +1,13 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
-
 #include "glwindow-splat.h"
 
 #include <QFile>
 #include <QImage>
-#include <QOpenGLBuffer>
-#include <QOpenGLContext>
 #include <QOpenGLDebugLogger>
 #include <QOpenGLExtraFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLTexture>
-#include <QOpenGLVertexArrayObject>
 #include <QOpenGlContext>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
 #include <QTimer>
 
 #include <format>
-#include <print>
-#include <vector>
-
-#include "happly.h"
 
 GLWindowSplat::GLWindowSplat() : m_worker(this)
 {
@@ -139,15 +125,11 @@ void GLWindowSplat::initializeGL()
 
 	delete m_program;
 	m_program = new QOpenGLShaderProgram;
-	// Prepend the correct version directive to the sources. The rest is the
-	// same, thanks to the common GLSL syntax.
-	bool isVertexOk   = m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource.c_str());
-	bool isFragmentOk = m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource.c_str());
-	bool isLinked     = m_program->link();
+	m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource.c_str());
+	m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource.c_str());
+	m_program->link();
 
-	bool isBoundProgram = m_program->bind();
-
-	qCritical() << "hola" << isVertexOk << isFragmentOk << isLinked << isBoundProgram;
+	m_program->bind();
 
 	// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
 	delete m_vao;
@@ -195,12 +177,11 @@ void GLWindowSplat::resizeGL(int w, int h)
 {
 	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
-	GLfloat tabFloat[] = { baseCamera.fx, baseCamera.fy };
+	GLfloat tabFloat[] = { focalWidth, focalHeight };
 	f->glUniform2fv(m_focalLoc, 1, tabFloat);
+	m_projectionMatrix = getProjectionMatrix(focalWidth, focalHeight, w, h);
 
-	m_projectionMatrix = getProjectionMatrix(baseCamera.fx, baseCamera.fy, w, h);
-
-	GLfloat innerTab[] = { static_cast<float>(w), static_cast<float>(h) };
+	GLfloat innerTab[] = { w, h };
 	f->glUniform2fv(m_viewPortLoc, 1, innerTab);
 
 	f->glViewport(0, 0, w, h);
@@ -209,14 +190,12 @@ void GLWindowSplat::resizeGL(int w, int h)
 
 void GLWindowSplat::paintGL()
 {
-	// Now use QOpenGLExtraFunctions instead of QOpenGLFunctions as we want to
-	// do more than what GL(ES) 2.0 offers.
 	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 	auto inv = invert4(viewMatrix);
 
 	// code a propos des activeskeys pas ré-écrit
-	//inv = rotate4(inv, -0.6f * std::sin(16.0f / 5000.5f), 0, 1, 0);
+	//inv = rotate4(inv, 0.6f * std::sin(16.0f / 5000.5f), 0, 1, 0);
 
 	viewMatrix = invert4(inv);
 

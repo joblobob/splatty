@@ -2,35 +2,15 @@
 #ifndef GLWIDGETSPLAT_H
 #define GLWIDGETSPLAT_H
 
-#include <QMatrix4x4>
 #include <QOpenGLBuffer>
+#include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
+#include <QOpenGLVertexArrayObject>
 #include <QOpenGLWindow>
-#include <QVector3D>
 #include <limits>
 #include <print>
 #include <vector>
 
-QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
-QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
-QT_FORWARD_DECLARE_CLASS(QOpenGLVertexArrayObject)
-
-// let's get crazy and copy everything here!
-
-struct position {
-	float x, y, z;
-};
-
-struct rotation {
-	position yaw, pitch, roll;
-};
-
-struct camera {
-	int id, width, height;
-	position position;
-	rotation rotation;
-	float fy, fx;
-};
 
 static std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)
 {
@@ -170,13 +150,13 @@ static std::vector<float> translate4(const std::vector<float>& a, float x, float
 }
 
 
-static camera baseCamera = { .id = 0, .width = 1024, .height = 728, .position {}, .rotation {}, .fy = 1500, .fx = 1500 };
-
 
 static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 
 static std::vector<float> viewMatrix = defaultViewMatrix;
 
+constexpr int focalWidth  = 1500;
+constexpr int focalHeight = 1500;
 
 
 class GLWindowSplat : public QOpenGLWindow
