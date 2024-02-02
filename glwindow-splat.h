@@ -398,9 +398,6 @@ public:
 		}
 	};
 
-private slots:
-	void startSecondStage();
-
 private:
 	QOpenGLTexture* m_texture       = nullptr;
 	QOpenGLShaderProgram* m_program = nullptr;
@@ -409,20 +406,10 @@ private:
 	QOpenGLBuffer m_indexBuffer;
 	QOpenGLBuffer m_vertexBuffer;
 
-
 	int m_projMatrixLoc = 0;
 	int m_viewPortLoc   = 0;
 	int m_focalLoc      = 0;
 	int m_viewLoc       = 0;
-
-	int m_lightPosLoc = 0;
-	QMatrix4x4 m_proj;
-	QMatrix4x4 m_world;
-	QVector3D m_eye;
-	QVector3D m_target   = { 0, 0, -1 };
-	bool m_uniformsDirty = true;
-	float m_r            = 0;
-	float m_r2           = 0;
 
 	worker m_worker;
 	std::vector<float> m_projectionMatrix;

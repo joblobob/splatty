@@ -25,8 +25,6 @@
 
 GLWindowSplat::GLWindowSplat() : m_worker(this)
 {
-	QTimer::singleShot(4000, this, &GLWindowSplat::startSecondStage);
-
 	//example struff finished
 
 	// Construct a data object by reading from file
@@ -69,17 +67,9 @@ GLWindowSplat::~GLWindowSplat()
 	delete m_program;
 }
 
-void GLWindowSplat::startSecondStage()
-{
-	QPropertyAnimation* r2Anim = new QPropertyAnimation(this, QByteArrayLiteral("r2"));
-	r2Anim->setStartValue(0.0f);
-	r2Anim->setEndValue(360.0f);
-	r2Anim->setDuration(20000);
-	r2Anim->setLoopCount(-1);
-	r2Anim->start();
-}
 
-static const char* vertexShaderSource =
+static std::string vertexShaderSource =
+    "#version 330\n"
     "#extension GL_ARB_shading_language_packing : enable\n"
     "uniform highp usampler2D u_texture;\n"
     "uniform mat4 projection, view;\n"
@@ -125,7 +115,8 @@ static const char* vertexShaderSource =
     "}\n";
 ;
 
-static const char* fragmentShaderSource = "in highp vec4 vColor;\n"
+static std::string fragmentShaderSource = "#version 330\n"
+                                          "in highp vec4 vColor;\n"
                                           "in highp vec2 vPosition;\n"
                                           "out highp vec4 fragColor;\n"
                                           "void main () {\n"
@@ -135,25 +126,12 @@ static const char* fragmentShaderSource = "in highp vec4 vColor;\n"
                                           "  fragColor = vec4(B * vColor.rgb, B);\n"
                                           "}\n";
 
-QByteArray versionedShaderCodehere(const char* src)
-{
-	QByteArray versionedSrc;
-
-	if (QOpenGLContext::currentContext()->isOpenGLES())
-		versionedSrc.append(QByteArrayLiteral("#version 300 es\n"));
-	else
-		versionedSrc.append(QByteArrayLiteral("#version 330\n"));
-
-	versionedSrc.append(src);
-	return versionedSrc;
-}
 
 void GLWindowSplat::initializeGL()
 {
 	QOpenGLContext* gl         = QOpenGLContext::currentContext();
 	QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
-	connect(
-	    logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << "OpenGLDebug: " << debugMessage; });
+	connect(logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << debugMessage; });
 	logger->initialize(); // initializes in the current context, i.e. ctx
 	logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
 
@@ -163,8 +141,8 @@ void GLWindowSplat::initializeGL()
 	m_program = new QOpenGLShaderProgram;
 	// Prepend the correct version directive to the sources. The rest is the
 	// same, thanks to the common GLSL syntax.
-	bool isVertexOk   = m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, versionedShaderCodehere(vertexShaderSource));
-	bool isFragmentOk = m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, versionedShaderCodehere(fragmentShaderSource));
+	bool isVertexOk   = m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource.c_str());
+	bool isFragmentOk = m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource.c_str());
 	bool isLinked     = m_program->link();
 
 	bool isBoundProgram = m_program->bind();
@@ -215,8 +193,6 @@ void GLWindowSplat::initializeGL()
 
 void GLWindowSplat::resizeGL(int w, int h)
 {
-	m_uniformsDirty = true;
-
 	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 	GLfloat tabFloat[] = { baseCamera.fx, baseCamera.fy };
@@ -255,6 +231,9 @@ void GLWindowSplat::paintGL()
 	} else {
 		f->glClear(GL_COLOR_BUFFER_BIT);
 	}
+
+	//update canvas
+	update();
 }
 
 void GLWindowSplat::setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight)

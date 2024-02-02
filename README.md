@@ -1,6 +1,6 @@
-# splat
+# splatty
 
-This is a WebGL implementation of a real-time renderer for [3D Gaussian Splatting for Real-Time Radiance Field Rendering](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/), a recently developed technique for taking a set of pictures and generating a photorealistic navigable 3D scene out of it. As it is essentially an extension of rendering point clouds, rendering scenes generated with this technique can be done very efficiently on ordinary graphics hardware- unlike prior comparable techniques such as NeRFs.
+This is a C++ OpenGL implementation of a real-time renderer for [3D Gaussian Splatting for Real-Time Radiance Field Rendering](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/), a recently developed technique for taking a set of pictures and generating a photorealistic navigable 3D scene out of it. As it is essentially an extension of rendering point clouds, rendering scenes generated with this technique can be done very efficiently on ordinary graphics hardware- unlike prior comparable techniques such as NeRFs.
 
 You can [try it out here](https://antimatter15.com/splat/).
 
@@ -12,48 +12,7 @@ https://github.com/antimatter15/splat/assets/30054/878d5d34-e0a7-4336-85df-111ff
 
 ## controls
 
-movement (arrow keys)
 
-- left/right arrow keys to strafe side to side
-- up/down arrow keys to move forward/back
-- `space` to jump
-
-camera angle (wasd)
-
-- `a`/`d` to turn camera left/right
-- `w`/`s` to tilt camera up/down
-- `q`/`e` to roll camera counterclockwise/clockwise
-- `i`/`k` and `j`/`l` to orbit
-
-trackpad
-- scroll up/down to orbit down
-- scroll left/right to orbit left/right
-- pinch to move forward/back
-- ctrl key + scroll up/down to move forward/back
-- shift + scroll up/down to move up/down
-- shift + scroll left/right to strafe side to side
-
-mouse
-- click and drag to orbit
-- right click (or ctrl/cmd key) and drag up/down to move forward/back
-- right click (or ctrl/cmd key) and drag left/right to strafe side to side
-
-touch (mobile)
-- one finger to orbit
-- two finger pinch to move forward/back
-- two finger rotate to rotate camera clockwise/counterclockwise
-- two finger pan to move side-to-side and up-down
-
-other
-- press 0-9 to switch to one of the pre-loaded camera views
-- press `p` to resume default animation
-- drag and drop .ply file to convert to .splat
-
-## other features
-
-- press `v` to save the current view coordinates to the url
-- open custom `.splat` files by adding a `url` param to a CORS-enabled URL
-- drag and drop a `.ply` file which has been processed with the 3d gaussian splatting software onto the page and it will automatically convert the file to the `.splat` format
 
 ## examples
 
@@ -67,9 +26,8 @@ note that as long as your `.splat` file is hosted in a CORS-accessible way, you 
 - https://antimatter15.com/splat/?url=bicycle.splat
 - https://antimatter15.com/splat/?url=https://media.reshot.ai/models/nike_next/model.splat#[0.95,0.16,-0.26,0,-0.16,0.99,0.01,0,0.26,0.03,0.97,0,0.01,-1.96,2.82,1]
 
-## notes
+## their notes, not mine
 
-- written in javascript with webgl 1.0 with no external dependencies, you can just hit view source and read the unminified code. webgl 2.0 doesn't really add any new features that aren't possible with webgl 1.0 with extensions. webgpu is apparently nice but still not very well supported outside of chromium.
 - we sorts splats by a combination of size and opacity and supports progressive loading so you can see and interact with the model without having all the splats loaded. 
 - does not currently support view dependent shading effects with spherical harmonics, this is primarily done to reduce the file size of the splat format so it can be loaded easily into web browsers. For third-order spherical harmonics we need 48 coefficients which is nearly 200 bytes per splat!
 - splat sorting is done asynchronously on the cpu in a webworker. it might be interesting to investigate performing the sort on the gpu with an implementation of bitonic or radix sorting, but it seems plausible to me that it'd be better to let the gpu focus rather than splitting its time between rendering and sorting.
