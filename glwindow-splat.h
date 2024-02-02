@@ -1,17 +1,15 @@
-// Copyright (C) 2016 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 #ifndef GLWIDGETSPLAT_H
 #define GLWIDGETSPLAT_H
 
 #include <QMatrix4x4>
-#include <QOpenGLWindow>
-#include <QOpenGLTexture>
 #include <QOpenGLBuffer>
+#include <QOpenGLTexture>
+#include <QOpenGLWindow>
 #include <QVector3D>
-#include <vector>
 #include <limits>
 #include <print>
+#include <vector>
 
 QT_FORWARD_DECLARE_CLASS(QOpenGLTexture)
 QT_FORWARD_DECLARE_CLASS(QOpenGLShaderProgram)
@@ -28,61 +26,59 @@ struct rotation {
 };
 
 struct camera {
-	int id, witdh, height;
+	int id, width, height;
 	position position;
 	rotation rotation;
 	float fy, fx;
 };
 
-static std::vector<float>getProjectionMatrix(float fx, float fy, int width, int height) {
+static std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)
+{
 	constexpr float znear = 0.2f;
-	constexpr float zfar = 200;
+	constexpr float zfar  = 200;
 
-	return{ (2.0f * fx) / width, 0.f, 0.f,  0.f,
-			  0.f, -(2 * fy) / height, 0.f,  0.f,
-			  0.f, 0.f, zfar / (zfar - znear), 1.f,
-			  0.f, 0.f, -(zfar * znear) / (zfar - znear), 0.f
-	};
+	return { (2.0f * fx) / width,
+		0.f,
+		0.f,
+		0.f,
+		0.f,
+		-(2 * fy) / height,
+		0.f,
+		0.f,
+		0.f,
+		0.f,
+		zfar / (zfar - znear),
+		1.f,
+		0.f,
+		0.f,
+		-(zfar * znear) / (zfar - znear),
+		0.f };
 }
 
-static std::vector<float> getViewMatrix(camera camera) {
-	const rotation R = camera.rotation;
-	const position t = camera.position;
+static std::vector<float> multiply4(const std::vector<float>& a, const std::vector<float>& b)
+{
 	return {
-		R.yaw.x, R.yaw.y, R.yaw.z, 0 ,
-		R.pitch.x, R.pitch.y, R.pitch.z, 0,
-		R.roll.x, R.roll.y, R.roll.z, 0,
-
-		-t.x * R.yaw.x - t.y * R.pitch.x - t.z * R.roll.x,
-		-t.x * R.yaw.y - t.y * R.pitch.y - t.z * R.roll.y,
-		-t.x * R.yaw.z - t.y * R.pitch.z - t.z * R.roll.z,
-		1
-	};
-}
-
-static std::vector<float> multiply4(const std::vector<float>& a, const std::vector<float>& b) {
-	return{
 		b[0] * a[0] + b[1] * a[4] + b[2] * a[8] + b[3] * a[12],
-			b[0] * a[1] + b[1] * a[5] + b[2] * a[9] + b[3] * a[13],
-			b[0] * a[2] + b[1] * a[6] + b[2] * a[10] + b[3] * a[14],
-			b[0] * a[3] + b[1] * a[7] + b[2] * a[11] + b[3] * a[15],
-			b[4] * a[0] + b[5] * a[4] + b[6] * a[8] + b[7] * a[12],
-			b[4] * a[1] + b[5] * a[5] + b[6] * a[9] + b[7] * a[13],
-			b[4] * a[2] + b[5] * a[6] + b[6] * a[10] + b[7] * a[14],
-			b[4] * a[3] + b[5] * a[7] + b[6] * a[11] + b[7] * a[15],
-			b[8] * a[0] + b[9] * a[4] + b[10] * a[8] + b[11] * a[12],
-			b[8] * a[1] + b[9] * a[5] + b[10] * a[9] + b[11] * a[13],
-			b[8] * a[2] + b[9] * a[6] + b[10] * a[10] + b[11] * a[14],
-			b[8] * a[3] + b[9] * a[7] + b[10] * a[11] + b[11] * a[15],
-			b[12] * a[0] + b[13] * a[4] + b[14] * a[8] + b[15] * a[12],
-			b[12] * a[1] + b[13] * a[5] + b[14] * a[9] + b[15] * a[13],
-			b[12] * a[2] + b[13] * a[6] + b[14] * a[10] + b[15] * a[14],
-			b[12] * a[3] + b[13] * a[7] + b[14] * a[11] + b[15] * a[15],
+		b[0] * a[1] + b[1] * a[5] + b[2] * a[9] + b[3] * a[13],
+		b[0] * a[2] + b[1] * a[6] + b[2] * a[10] + b[3] * a[14],
+		b[0] * a[3] + b[1] * a[7] + b[2] * a[11] + b[3] * a[15],
+		b[4] * a[0] + b[5] * a[4] + b[6] * a[8] + b[7] * a[12],
+		b[4] * a[1] + b[5] * a[5] + b[6] * a[9] + b[7] * a[13],
+		b[4] * a[2] + b[5] * a[6] + b[6] * a[10] + b[7] * a[14],
+		b[4] * a[3] + b[5] * a[7] + b[6] * a[11] + b[7] * a[15],
+		b[8] * a[0] + b[9] * a[4] + b[10] * a[8] + b[11] * a[12],
+		b[8] * a[1] + b[9] * a[5] + b[10] * a[9] + b[11] * a[13],
+		b[8] * a[2] + b[9] * a[6] + b[10] * a[10] + b[11] * a[14],
+		b[8] * a[3] + b[9] * a[7] + b[10] * a[11] + b[11] * a[15],
+		b[12] * a[0] + b[13] * a[4] + b[14] * a[8] + b[15] * a[12],
+		b[12] * a[1] + b[13] * a[5] + b[14] * a[9] + b[15] * a[13],
+		b[12] * a[2] + b[13] * a[6] + b[14] * a[10] + b[15] * a[14],
+		b[12] * a[3] + b[13] * a[7] + b[14] * a[11] + b[15] * a[15],
 	};
 }
 
-static
-std::vector<float> invert4(const std::vector<float>& a) {
+static std::vector<float> invert4(const std::vector<float>& a)
+{
 	float b00 = a[0] * a[5] - a[1] * a[4];
 	float b01 = a[0] * a[6] - a[2] * a[4];
 	float b02 = a[0] * a[7] - a[3] * a[4];
@@ -95,39 +91,37 @@ std::vector<float> invert4(const std::vector<float>& a) {
 	float b09 = a[9] * a[14] - a[10] * a[13];
 	float b10 = a[9] * a[15] - a[11] * a[13];
 	float b11 = a[10] * a[15] - a[11] * a[14];
-	float det =
-		b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-	if (det < 0.0000001) return {};
+	float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+	if (det < 0.0000001)
+		return std::vector<float>(16);
 
-	return{
-			(a[5] * b11 - a[6] * b10 + a[7] * b09) / det,
-			(a[2] * b10 - a[1] * b11 - a[3] * b09) / det,
-			(a[13] * b05 - a[14] * b04 + a[15] * b03) / det,
-			(a[10] * b04 - a[9] * b05 - a[11] * b03) / det,
-			(a[6] * b08 - a[4] * b11 - a[7] * b07) / det,
-			(a[0] * b11 - a[2] * b08 + a[3] * b07) / det,
-			(a[14] * b02 - a[12] * b05 - a[15] * b01) / det,
-			(a[8] * b05 - a[10] * b02 + a[11] * b01) / det,
-			(a[4] * b10 - a[5] * b08 + a[7] * b06) / det,
-			(a[1] * b08 - a[0] * b10 - a[3] * b06) / det,
-			(a[12] * b04 - a[13] * b02 + a[15] * b00) / det,
-			(a[9] * b02 - a[8] * b04 - a[11] * b00) / det,
-			(a[5] * b07 - a[4] * b09 - a[6] * b06) / det,
-			(a[0] * b09 - a[1] * b07 + a[2] * b06) / det,
-			(a[13] * b01 - a[12] * b03 - a[14] * b00) / det,
-			(a[8] * b03 - a[9] * b01 + a[10] * b00) / det
-	};
+	return { (a[5] * b11 - a[6] * b10 + a[7] * b09) / det,
+		(a[2] * b10 - a[1] * b11 - a[3] * b09) / det,
+		(a[13] * b05 - a[14] * b04 + a[15] * b03) / det,
+		(a[10] * b04 - a[9] * b05 - a[11] * b03) / det,
+		(a[6] * b08 - a[4] * b11 - a[7] * b07) / det,
+		(a[0] * b11 - a[2] * b08 + a[3] * b07) / det,
+		(a[14] * b02 - a[12] * b05 - a[15] * b01) / det,
+		(a[8] * b05 - a[10] * b02 + a[11] * b01) / det,
+		(a[4] * b10 - a[5] * b08 + a[7] * b06) / det,
+		(a[1] * b08 - a[0] * b10 - a[3] * b06) / det,
+		(a[12] * b04 - a[13] * b02 + a[15] * b00) / det,
+		(a[9] * b02 - a[8] * b04 - a[11] * b00) / det,
+		(a[5] * b07 - a[4] * b09 - a[6] * b06) / det,
+		(a[0] * b09 - a[1] * b07 + a[2] * b06) / det,
+		(a[13] * b01 - a[12] * b03 - a[14] * b00) / det,
+		(a[8] * b03 - a[9] * b01 + a[10] * b00) / det };
 }
 
-static
-std::vector<float> rotate4(const std::vector<float>& a, float rad, float x, float y, float z) {
+static std::vector<float> rotate4(const std::vector<float>& a, float rad, float x, float y, float z)
+{
 	float len = std::hypot(x, y, z);
 	x /= len;
 	y /= len;
 	z /= len;
-	float s = std::sin(rad);
-	float c = std::cos(rad);
-	float t = 1 - c;
+	float s   = std::sin(rad);
+	float c   = std::cos(rad);
+	float t   = 1 - c;
 	float b00 = x * x * t + c;
 	float b01 = y * x * t + z * s;
 	float b02 = z * x * t - y * s;
@@ -137,62 +131,57 @@ std::vector<float> rotate4(const std::vector<float>& a, float rad, float x, floa
 	float b20 = x * z * t + y * s;
 	float b21 = y * z * t - x * s;
 	float b22 = z * z * t + c;
-	return {
-			a[0] * b00 + a[4] * b01 + a[8] * b02,
-			a[1] * b00 + a[5] * b01 + a[9] * b02,
-			a[2] * b00 + a[6] * b01 + a[10] * b02,
-			a[3] * b00 + a[7] * b01 + a[11] * b02,
-			a[0] * b10 + a[4] * b11 + a[8] * b12,
-			a[1] * b10 + a[5] * b11 + a[9] * b12,
-			a[2] * b10 + a[6] * b11 + a[10] * b12,
-			a[3] * b10 + a[7] * b11 + a[11] * b12,
-			a[0] * b20 + a[4] * b21 + a[8] * b22,
-			a[1] * b20 + a[5] * b21 + a[9] * b22,
-			a[2] * b20 + a[6] * b21 + a[10] * b22,
-			a[3] * b20 + a[7] * b21 + a[11] * b22,
-			a[12], a[13], a[14], a[15]
-			//...a.slice(12, 16)
-	};
+	return { a[0] * b00 + a[4] * b01 + a[8] * b02,
+		a[1] * b00 + a[5] * b01 + a[9] * b02,
+		a[2] * b00 + a[6] * b01 + a[10] * b02,
+		a[3] * b00 + a[7] * b01 + a[11] * b02,
+		a[0] * b10 + a[4] * b11 + a[8] * b12,
+		a[1] * b10 + a[5] * b11 + a[9] * b12,
+		a[2] * b10 + a[6] * b11 + a[10] * b12,
+		a[3] * b10 + a[7] * b11 + a[11] * b12,
+		a[0] * b20 + a[4] * b21 + a[8] * b22,
+		a[1] * b20 + a[5] * b21 + a[9] * b22,
+		a[2] * b20 + a[6] * b21 + a[10] * b22,
+		a[3] * b20 + a[7] * b21 + a[11] * b22,
+		a[12],
+		a[13],
+		a[14],
+		a[15] };
 }
 
-static std::vector<float> translate4(const std::vector<float>& a, float x, float y, float z) {
-	return{
-		//...a.slice(0, 12),
-			a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10], a[11],
-			a[0] * x + a[4] * y + a[8] * z + a[12],
-			a[1] * x + a[5] * y + a[9] * z + a[13],
-			a[2] * x + a[6] * y + a[10] * z + a[14],
-			a[3] * x + a[7] * y + a[11] * z + a[15]
-	};
+static std::vector<float> translate4(const std::vector<float>& a, float x, float y, float z)
+{
+	return { a[0],
+		a[1],
+		a[2],
+		a[3],
+		a[4],
+		a[5],
+		a[6],
+		a[7],
+		a[8],
+		a[9],
+		a[10],
+		a[11],
+		a[0] * x + a[4] * y + a[8] * z + a[12],
+		a[1] * x + a[5] * y + a[9] * z + a[13],
+		a[2] * x + a[6] * y + a[10] * z + a[14],
+		a[3] * x + a[7] * y + a[11] * z + a[15] };
 }
 
 
-static camera baseCamera = { 0,1959,1090,{
-			-3.0089893469241797f, -0.11086489695181866f, -3.7527640949141428f},
-		{
-			{0.876134201218856f, 0.06925962026449776f, 0.47706599800804744f} ,
-			{ -0.04747421839895102f, 0.9972110940209488f, -0.057586739349882114f},
-			{ -0.4797239414934443f, 0.027805376500959853f, 0.8769787916452908f},
-		},
-		1164.6601287484507,
-		1159.5880733038064 };
+static camera baseCamera = { .id = 0, .width = 1024, .height = 728, .position {}, .rotation {}, .fy = 1500, .fx = 1500 };
 
-static const std::vector<float> defaultViewMatrix = {
-	0.47, 0.04, 0.88, 0,
-	-0.11, 0.99, 0.02, 0,
-	-0.88, -0.11, 0.47, 0,
-	0.07, 0.03, 6.55, 1
-};
 
-static std::vector<float>  viewMatrix = defaultViewMatrix;
+static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
+
+static std::vector<float> viewMatrix = defaultViewMatrix;
 
 
 
-class GLWindowSplat : public QOpenGLWindow {
+class GLWindowSplat : public QOpenGLWindow
+{
 	Q_OBJECT
-		Q_PROPERTY(float z READ z WRITE setZ)
-		Q_PROPERTY(float r READ r WRITE setR)
-		Q_PROPERTY(float r2 READ r2 WRITE setR2)
 
 public:
 	GLWindowSplat();
@@ -201,15 +190,6 @@ public:
 	void initializeGL();
 	void resizeGL(int w, int h);
 	void paintGL();
-
-	float z() const { return m_eye.z(); }
-	void setZ(float v);
-
-	float r() const { return m_r; }
-	void setR(float v);
-	float r2() const { return m_r2; }
-	void setR2(float v);
-
 
 	void setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight);
 	void setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount);
@@ -232,63 +212,47 @@ public:
 		std::vector<int> depthIndex;
 		int lastVertexCount = 0;
 
-
-		//private:
-		//var _floatView = new Float32Array(1);
-		//var _int32View = new Int32Array(_floatView.buffer);
-
-		int floatToHalf(float val) {
-			//_floatView[0] = float;
-			//var f = _int32View[0];
-				//val = 0.022582
-				//f = 1018756950
-
+		int floatToHalf(float val)
+		{
 			unsigned int f;
 			memcpy(&f, &val, 4);
 
 			int sign = (f >> 31) & 0x0001;
-			int exp = (f >> 23) & 0x00ff;
+			int exp  = (f >> 23) & 0x00ff;
 			int frac = f & 0x007fffff;
-
-			//0, 121, 3735382
 
 			int newExp;
 			if (exp == 0) {
 				newExp = 0;
-			}
-			else if (exp < 113) {
+			} else if (exp < 113) {
 				newExp = 0;
 				frac |= 0x00800000;
 				frac = frac >> (113 - exp);
 				if (frac & 0x01000000) {
 					newExp = 1;
-					frac = 0;
+					frac   = 0;
 				}
-			}
-			else if (exp < 142) {
+			} else if (exp < 142) {
 				newExp = exp - 112;
-			}
-			else {
+			} else {
 				newExp = 31;
-				frac = 0;
+				frac   = 0;
 			}
 
 			return (sign << 15) | (newExp << 10) | (frac >> 13);
 		}
 
-		int packHalf2x16(float x, float y) {
-			return unsigned int(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
-		}
+		int packHalf2x16(float x, float y) { return unsigned int(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0; }
 
 
-		void generateTexture() {
-			if (buffer.empty()) return;
+		void generateTexture()
+		{
+			if (buffer.empty())
+				return;
 
-			const std::vector<float> f_buffer = buffer;
-
-			int texwidth = 1024 * 2; // Set to your desired width
+			int texwidth  = 1024 * 2;                                              // Set to your desired width
 			int texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-			std::vector<unsigned int> texdata(texwidth * texheight * 4); // 4 components per pixel (RGBA)
+			std::vector<unsigned int> texdata(texwidth * texheight * 4);           // 4 components per pixel (RGBA)
 
 			// Here we convert from a .splat file buffer into a texture
 			// With a little bit more foresight perhaps this texture file
@@ -297,9 +261,9 @@ public:
 			for (int i = 0; i < vertexCount; i++) {
 				// x, y, z
 				unsigned int valx, valy, valz;
-				memcpy(&valx, &f_buffer[8 * i + 0], 4);
-				memcpy(&valy, &f_buffer[8 * i + 1], 4);
-				memcpy(&valz, &f_buffer[8 * i + 2], 4);
+				memcpy(&valx, &buffer[8 * i + 0], 4);
+				memcpy(&valy, &buffer[8 * i + 1], 4);
+				memcpy(&valz, &buffer[8 * i + 2], 4);
 				texdata[8 * i + 0] = valx;
 				texdata[8 * i + 1] = valy;
 				texdata[8 * i + 2] = valz;
@@ -311,31 +275,29 @@ public:
 
 				// quaternions
 				std::vector<float> scale = {
-						f_buffer[8 * i + 3 + 0],
-						f_buffer[8 * i + 3 + 1],
-						f_buffer[8 * i + 3 + 2],
+					buffer[8 * i + 3 + 0],
+					buffer[8 * i + 3 + 1],
+					buffer[8 * i + 3 + 2],
 				};
 
-				std::vector<float> rot = {
-					(float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
-						(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
-						(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
-						(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f
-				};
+				std::vector<float> rot = { (float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
+					(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
+					(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
+					(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f };
 
 				// Compute the matrix product of S and R (M = S * R)
 				std::vector<float> M = {
-						1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]),
-						2.0f * (rot[1] * rot[2] + rot[0] * rot[3]),
-						2.0f * (rot[1] * rot[3] - rot[0] * rot[2]),
+					1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]),
+					2.0f * (rot[1] * rot[2] + rot[0] * rot[3]),
+					2.0f * (rot[1] * rot[3] - rot[0] * rot[2]),
 
-						2.0f * (rot[1] * rot[2] - rot[0] * rot[3]),
-						1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]),
-						2.0f * (rot[2] * rot[3] + rot[0] * rot[1]),
+					2.0f * (rot[1] * rot[2] - rot[0] * rot[3]),
+					1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]),
+					2.0f * (rot[2] * rot[3] + rot[0] * rot[1]),
 
-						2.0f * (rot[1] * rot[3] + rot[0] * rot[2]),
-						2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
-						1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
+					2.0f * (rot[1] * rot[3] + rot[0] * rot[2]),
+					2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
+					1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
 				};
 				for (int i = 0; i < M.size(); i++) {
 					M[i] = M[i] * scale[std::floor(i / 3)];
@@ -343,11 +305,11 @@ public:
 
 				const std::vector<float> sigma = {
 					M[0] * M[0] + M[3] * M[3] + M[6] * M[6],
-						M[0] * M[1] + M[3] * M[4] + M[6] * M[7],
-						M[0] * M[2] + M[3] * M[5] + M[6] * M[8],
-						M[1] * M[1] + M[4] * M[4] + M[7] * M[7],
-						M[1] * M[2] + M[4] * M[5] + M[7] * M[8],
-						M[2] * M[2] + M[5] * M[5] + M[8] * M[8],
+					M[0] * M[1] + M[3] * M[4] + M[6] * M[7],
+					M[0] * M[2] + M[3] * M[5] + M[6] * M[8],
+					M[1] * M[1] + M[4] * M[4] + M[7] * M[7],
+					M[1] * M[2] + M[4] * M[5] + M[7] * M[8],
+					M[2] * M[2] + M[5] * M[5] + M[8] * M[8],
 				};
 
 				texdata[8 * i + 4] = packHalf2x16(4 * sigma[0], 4 * sigma[1]);
@@ -358,20 +320,17 @@ public:
 			m_glwindow->setTextureData(texdata, texwidth, texheight);
 		}
 
-		void runSort(const std::vector<float>& viewProj) {
-			if (buffer.empty()) return;
+		void runSort(const std::vector<float>& viewProj)
+		{
+			if (buffer.empty())
+				return;
 
-			const std::vector<float> f_buffer = buffer;
 			if (lastVertexCount == vertexCount) {
-				float dot =
-					lastProj[2] * viewProj[2] +
-					lastProj[6] * viewProj[6] +
-					lastProj[10] * viewProj[10];
+				float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
 				if (std::abs(dot - 1) < 0.01) {
 					return;
 				}
-			}
-			else {
+			} else {
 				generateTexture();
 				lastVertexCount = vertexCount;
 			}
@@ -381,14 +340,12 @@ public:
 			int minDepth = INT_MAX;
 			std::vector<int> sizeList(vertexCount);
 			for (int i = 0; i < vertexCount; i++) {
-				int depth =
-					(viewProj[2] * f_buffer[8 * i + 0] +
-						viewProj[6] * f_buffer[8 * i + 1] +
-						viewProj[10] * f_buffer[8 * i + 2]) *
-					4096;
+				int depth   = (viewProj[2] * buffer[8 * i + 0] + viewProj[6] * buffer[8 * i + 1] + viewProj[10] * buffer[8 * i + 2]) * 4096;
 				sizeList[i] = depth;
-				if (depth > maxDepth) maxDepth = depth;
-				if (depth < minDepth) minDepth = depth;
+				if (depth > maxDepth)
+					maxDepth = depth;
+				if (depth < minDepth)
+					minDepth = depth;
 			}
 
 			// This is a 16 bit single-pass counting sort
@@ -414,71 +371,39 @@ public:
 
 		bool sortRunning = false;
 
-		void throttledSort() {
+		void throttledSort()
+		{
 			if (!sortRunning) {
-				sortRunning = true;
+				sortRunning                       = true;
 				const std::vector<float> lastView = viewProj;
 				runSort(lastView);
 				sortRunning = false;
-				//	setTimeout(() = > {
-					//	sortRunning = false;
-				//		if (lastView != = viewProj) { // when the view changes, we should re-do the sort
-					//		throttledSort();
-					//	}
-					//}, 0);
+				// when the view changes, we should re-do the sort
 			}
 		};
 
 		void setBuffer(const std::vector<float>& newbuffer, const std::vector<unsigned char>& orignialSplatData, int newvertexCount)
 		{
-			buffer = newbuffer;
-			u_buffer = orignialSplatData;
+			buffer      = newbuffer;
+			u_buffer    = orignialSplatData;
 			vertexCount = newvertexCount;
 		}
 
-		void setVertexCount(int newvertexCount)
-		{
-			vertexCount = newvertexCount;
-		}
+		void setVertexCount(int newvertexCount) { vertexCount = newvertexCount; }
 
 		void setView(const std::vector<float>& newviewProj)
 		{
 			viewProj = newviewProj;
 			throttledSort();
 		}
-
-		/*self.onmessage = (e) = > {
-			if (e.data.ply) {
-				vertexCount = 0;
-				runSort(viewProj);
-				buffer = processPlyBuffer(e.data.ply);
-				vertexCount = Math.floor(buffer.byteLength / rowLength);
-				postMessage({ buffer: buffer });
-			}
-			else if (e.data.buffer) {
-				buffer = e.data.buffer;
-				vertexCount = e.data.vertexCount;
-			}
-			else if (e.data.vertexCount) {
-				vertexCount = e.data.vertexCount;
-			}
-			else if (e.data.view) {
-				viewProj = e.data.view;
-				throttledSort();
-			}
-		};*/
-
-
-
 	};
 
 private slots:
 	void startSecondStage();
 
 private:
-	QOpenGLTexture* m_texture = nullptr;
+	QOpenGLTexture* m_texture       = nullptr;
 	QOpenGLShaderProgram* m_program = nullptr;
-	QOpenGLBuffer* m_vbo = nullptr;
 	QOpenGLVertexArrayObject* m_vao = nullptr;
 
 	QOpenGLBuffer m_indexBuffer;
@@ -486,22 +411,21 @@ private:
 
 
 	int m_projMatrixLoc = 0;
-	int m_viewPortLoc = 0;
-	int m_focalLoc = 0;
-	int m_viewLoc = 0;
+	int m_viewPortLoc   = 0;
+	int m_focalLoc      = 0;
+	int m_viewLoc       = 0;
 
 	int m_lightPosLoc = 0;
 	QMatrix4x4 m_proj;
 	QMatrix4x4 m_world;
 	QVector3D m_eye;
-	QVector3D m_target = { 0, 0, -1 };
+	QVector3D m_target   = { 0, 0, -1 };
 	bool m_uniformsDirty = true;
-	float m_r = 0;
-	float m_r2 = 0;
+	float m_r            = 0;
+	float m_r2           = 0;
 
 	worker m_worker;
 	std::vector<float> m_projectionMatrix;
-
 };
 
 #endif
