@@ -11,11 +11,8 @@
 
 GLWindowSplat::GLWindowSplat() : m_worker(this)
 {
-	//example struff finished
-
 	// Construct a data object by reading from file
 	constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-
 
 	std::vector<float> projectionMatrix;
 
@@ -24,7 +21,7 @@ GLWindowSplat::GLWindowSplat() : m_worker(this)
 
 	QFile splatFile("plush.splat");
 	splatFile.open(QIODevice::ReadOnly);
-	qCritical() << newData.size();
+	qCritical() << "File size:" << newData.size();
 	QByteArray splatData = splatFile.readAll();
 	splatFile.close();
 
@@ -32,15 +29,12 @@ GLWindowSplat::GLWindowSplat() : m_worker(this)
 		originalData.push_back(data);
 	}
 
-
 	for (int i = 0; i < splatData.size(); i += 4) {
 		float f;
 		uchar b[] = { splatData[i + 0], splatData[i + 1], splatData[i + 2], splatData[i + 3] };
 		memcpy(&f, &b, sizeof(f));
 		newData.push_back(f);
 	}
-
-
 
 	m_worker.setBuffer(newData, originalData, (originalData.size() / rowLength));
 }
@@ -195,8 +189,8 @@ void GLWindowSplat::paintGL()
 	auto inv = invert4(viewMatrix);
 
 	// code a propos des activeskeys pas ré-écrit
-	//inv = rotate4(inv, 0.6f * std::sin(16.0f / 5000.5f), 0, 1, 0);
-
+	//inv = rotate4(inv, std::sin(16.0f / 2000.5f), 1, -1, 1);
+	//inv        = translate4(inv, 0.05, 0.05, -0.5);
 	viewMatrix = invert4(inv);
 
 	auto viewProj = multiply4(m_projectionMatrix, viewMatrix);
@@ -211,7 +205,7 @@ void GLWindowSplat::paintGL()
 		f->glClear(GL_COLOR_BUFFER_BIT);
 	}
 
-	//update canvas
+	//update canvas when we need to ^_^
 	update();
 }
 
