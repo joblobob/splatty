@@ -11,6 +11,8 @@
 #include <print>
 #include <vector>
 
+import splatty;
+
 
 static std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)
 {
