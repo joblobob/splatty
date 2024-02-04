@@ -219,7 +219,7 @@ export struct worker {
 
 		texwidth  = 1024 * 2;                                              // Set to your desired width
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-		texdata.resize(texwidth * texheight * 4);                         // 4 components per pixel (RGBA)
+		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
@@ -323,7 +323,7 @@ export struct worker {
 		std::vector<int> starts0(256 * 256);
 		for (int i = 1; i < 256 * 256; i++)
 			starts0[i] = starts0[i - 1] + counts0[i - 1];
-		depthIndex.resize(vertexCount);
+		depthIndex.resize(vertexCount + 1);
 		for (int i = 0; i < vertexCount; i++)
 			depthIndex[starts0[sizeList[i]]++] = i;
 

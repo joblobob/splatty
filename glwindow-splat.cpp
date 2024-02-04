@@ -197,10 +197,10 @@ void GLWindowSplat::paintGL()
 	m_worker.setView(viewProj);
 	if (!gotTexture) {
 		gotTexture = true;
-
-		setTextureData(m_worker.texdata, m_worker.texwidth, m_worker.texwidth);
+		setTextureData(m_worker.texdata, m_worker.texwidth, m_worker.texheight);
 		setDepthIndex(m_worker.depthIndex, m_worker.viewProj, m_worker.vertexCount);
 	}
+
 
 	// fps calculations
 	if (m_worker.vertexCount > 0) {
@@ -215,7 +215,7 @@ void GLWindowSplat::paintGL()
 	update();
 }
 
-void GLWindowSplat::setTextureData(std::vector<unsigned int> texdata, int texwidth, int texheight)
+void GLWindowSplat::setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight)
 {
 	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 	f->glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
