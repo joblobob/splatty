@@ -13,6 +13,8 @@ module;
 
 export module splatty;
 
+// when you import splatty, you also get the shaders, because they go together, but could be loaded independently
+export import shaders;
 
 export std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)
 {

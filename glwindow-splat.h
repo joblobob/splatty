@@ -7,8 +7,6 @@
 #include <QOpenGLTexture>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLWindow>
-#include <limits>
-#include <print>
 #include <vector>
 
 import splatty;
