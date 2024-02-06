@@ -308,6 +308,8 @@ export struct worker {
 			texdata[8 * i + 5] = packHalf2x16(4 * sigma[2], 4 * sigma[3]);
 			texdata[8 * i + 6] = packHalf2x16(4 * sigma[4], 4 * sigma[5]);
 		}
+
+		setTextureData(texdata, texwidth, texheight);
 	}
 
 	void runSort(const std::vector<float>& viewProj)
@@ -355,6 +357,8 @@ export struct worker {
 		//console.timeEnd("sort");
 
 		lastProj = viewProj;
+
+		setDepthIndex(depthIndex, viewProj, vertexCount);
 	}
 
 
@@ -457,5 +461,28 @@ export struct worker {
 
 		f->glViewport(0, 0, w, h);
 		f->glUniformMatrix4fv(m_projMatrixLoc, 1, false, m_projectionMatrix.data());
+	}
+
+	void setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight)
+	{
+		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
+		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
+		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		f->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32UI, texwidth, texheight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, texdata.data());
+		f->glActiveTexture(GL_TEXTURE0);
+		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
+	}
+
+	void setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount)
+	{
+		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
+
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
+		f->glBufferData(GL_ARRAY_BUFFER, depthIndex.size() * 4, depthIndex.data(), GL_DYNAMIC_DRAW);
 	}
 };

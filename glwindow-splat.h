@@ -25,9 +25,6 @@ public:
 	void resizeGL(int w, int h);
 	void paintGL();
 
-	void setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight);
-	void setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount);
-
 private:
 	worker m_worker;
 };

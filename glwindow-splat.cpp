@@ -63,12 +63,6 @@ void GLWindowSplat::paintGL()
 
 	auto viewProj = multiply4(m_worker.m_projectionMatrix, viewMatrix);
 	m_worker.setView(viewProj);
-	if (!m_worker.gotTexture) {
-		m_worker.gotTexture = true;
-		setTextureData(m_worker.texdata, m_worker.texwidth, m_worker.texheight);
-		setDepthIndex(m_worker.depthIndex, m_worker.viewProj, m_worker.vertexCount);
-	}
-
 
 	// fps calculations
 	if (m_worker.vertexCount > 0) {
@@ -81,29 +75,4 @@ void GLWindowSplat::paintGL()
 
 	//update canvas when we need to ^_^
 	update();
-}
-
-void GLWindowSplat::setTextureData(const std::vector<unsigned int>& texdata, int texwidth, int texheight)
-{
-	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-	f->glBindTexture(GL_TEXTURE_2D, m_worker.m_texture.textureId());
-	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	f->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32UI, texwidth, texheight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, texdata.data());
-	f->glActiveTexture(GL_TEXTURE0);
-	f->glBindTexture(GL_TEXTURE_2D, m_worker.m_texture.textureId());
-}
-
-
-
-void GLWindowSplat::setDepthIndex(const std::vector<unsigned int>& depthIndex, const std::vector<float>& viewProj, int vertexCount)
-{
-	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
-	f->glBindBuffer(GL_ARRAY_BUFFER, m_worker.m_indexBuffer.bufferId());
-	f->glBufferData(GL_ARRAY_BUFFER, depthIndex.size() * 4, depthIndex.data(), GL_DYNAMIC_DRAW);
 }
