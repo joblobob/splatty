@@ -47,17 +47,7 @@ void GLWindowSplat::initializeGL()
 
 void GLWindowSplat::resizeGL(int w, int h)
 {
-	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
-	GLfloat tabFloat[] = { focalWidth, focalHeight };
-	f->glUniform2fv(m_worker.m_focalLoc, 1, tabFloat);
-	m_worker.m_projectionMatrix = getProjectionMatrix(focalWidth, focalHeight, w, h);
-
-	GLfloat innerTab[] = { w, h };
-	f->glUniform2fv(m_worker.m_viewPortLoc, 1, innerTab);
-
-	f->glViewport(0, 0, w, h);
-	f->glUniformMatrix4fv(m_worker.m_projMatrixLoc, 1, false, m_worker.m_projectionMatrix.data());
+	m_worker.resizeGL(w, h);
 }
 
 void GLWindowSplat::paintGL()
