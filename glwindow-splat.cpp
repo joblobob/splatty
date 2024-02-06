@@ -52,26 +52,20 @@ void GLWindowSplat::resizeGL(int w, int h)
 
 void GLWindowSplat::paintGL()
 {
-	QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
+	// *** interact with the world ON
 	auto inv = invert4(viewMatrix);
 
 	// code a propos des activeskeys pas ré-écrit
 	//inv = rotate4(inv, std::sin(16.0f / 2000.5f), 1, -1, 1);
 	//inv        = translate4(inv, 0.05, 0.05, -0.5);
+
 	viewMatrix = invert4(inv);
 
 	auto viewProj = multiply4(m_worker.m_projectionMatrix, viewMatrix);
-	m_worker.setView(viewProj);
+	// *** interact with the world OFF
 
-	// fps calculations
-	if (m_worker.vertexCount > 0) {
-		f->glUniformMatrix4fv(m_worker.m_viewLoc, 1, false, viewMatrix.data());
-		f->glClear(GL_COLOR_BUFFER_BIT);
-		QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, m_worker.vertexCount);
-	} else {
-		f->glClear(GL_COLOR_BUFFER_BIT);
-	}
+	// set the view to the new coordinates
+	m_worker.setView(viewProj);
 
 	//update canvas when we need to ^_^
 	update();
