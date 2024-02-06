@@ -11,15 +11,12 @@
 
 import splatty;
 
-
-
 class GLWindowSplat : public QOpenGLWindow
 {
 	Q_OBJECT
 
 public:
 	GLWindowSplat();
-	~GLWindowSplat();
 
 	void initializeGL();
 	void resizeGL(int w, int h);

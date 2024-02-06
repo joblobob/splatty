@@ -12,6 +12,7 @@ module;
 #include <print>
 #include <vector>
 
+#include <QFile>
 #include <QOpenGLBuffer>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -172,7 +173,33 @@ export constexpr int focalHeight = 1500;
 
 
 export struct worker {
-	worker() : m_texture(QOpenGLTexture::Target::Target2D) {}
+	worker() : m_texture(QOpenGLTexture::Target::Target2D)
+	{
+		// Construct a data object by reading from file
+		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+
+		std::vector<float> newData;
+		std::vector<unsigned char> originalData;
+
+		QFile splatFile("plush.splat");
+		splatFile.open(QIODevice::ReadOnly);
+		qCritical() << "File size:" << newData.size();
+		QByteArray splatData = splatFile.readAll();
+		splatFile.close();
+
+		for (const unsigned char data : splatData) {
+			originalData.push_back(data);
+		}
+
+		for (int i = 0; i < splatData.size(); i += 4) {
+			float f;
+			uchar b[] = { splatData[i + 0], splatData[i + 1], splatData[i + 2], splatData[i + 3] };
+			memcpy(&f, &b, sizeof(f));
+			newData.push_back(f);
+		}
+
+		setBuffer(newData, originalData, (originalData.size() / rowLength));
+	}
 	std::vector<float> buffer;
 	std::vector<unsigned char> u_buffer;
 	int vertexCount = 0;
