@@ -6,10 +6,18 @@
 
 module;
 
+
 #include <cmath>
 #include <limits>
 #include <print>
 #include <vector>
+
+#include <QOpenGLBuffer>
+#include <QOpenGLContext>
+#include <QOpenGLExtraFunctions>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLTexture>
+#include <QOpenGLVertexArrayObject>
 
 export module splatty;
 
@@ -164,6 +172,7 @@ export constexpr int focalHeight = 1500;
 
 
 export struct worker {
+	worker() : m_texture(QOpenGLTexture::Target::Target2D) {}
 	std::vector<float> buffer;
 	std::vector<unsigned char> u_buffer;
 	int vertexCount = 0;
@@ -180,6 +189,20 @@ export struct worker {
 	int texwidth;
 	int texheight;
 	std::vector<unsigned int> depthIndex;
+
+	QOpenGLTexture m_texture;
+	QOpenGLShaderProgram m_program;
+	QOpenGLVertexArrayObject m_vao;
+	bool gotTexture = false;
+
+	int m_projMatrixLoc = 0;
+	int m_viewPortLoc   = 0;
+	int m_focalLoc      = 0;
+	int m_viewLoc       = 0;
+	QOpenGLBuffer m_indexBuffer;
+	QOpenGLBuffer m_vertexBuffer;
+
+	std::vector<float> m_projectionMatrix;
 
 	int floatToHalf(float val)
 	{
@@ -361,5 +384,63 @@ export struct worker {
 	{
 		viewProj = newviewProj;
 		throttledSort();
+	}
+
+
+	void initializeGL()
+	{
+		//QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
+		//connect(logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << debugMessage; });
+		//logger->initialize(); // initializes in the current context, i.e. ctx
+		//logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
+
+		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
+
+
+		m_program.addShaderFromSourceCode(QOpenGLShader::Vertex, ShaderSource::vertex);
+		m_program.addShaderFromSourceCode(QOpenGLShader::Fragment, ShaderSource::fragment);
+		m_program.link();
+
+		m_program.bind();
+
+		// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
+
+		if (m_vao.create())
+			m_vao.bind();
+
+		f->glDisable(GL_DEPTH_TEST); // Disable depth testing
+
+		f->glEnable(GL_BLEND);
+		f->glBlendFuncSeparate(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
+
+		m_projMatrixLoc = m_program.uniformLocation("projection");
+		m_viewPortLoc   = m_program.uniformLocation("viewport");
+		m_focalLoc      = m_program.uniformLocation("focal");
+		m_viewLoc       = m_program.uniformLocation("view");
+
+		// positions
+		const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
+
+		m_vertexBuffer.create();
+
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
+		f->glBufferData(GL_ARRAY_BUFFER, 8 * 4, triangleVertices.data(), GL_STATIC_DRAW);
+		const int a_position = m_program.attributeLocation("position");
+		f->glEnableVertexAttribArray(a_position);
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
+		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+		//m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
+		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
+
+		auto u_textureLocation = m_program.uniformLocation("u_texture");
+		f->glUniform1i(u_textureLocation, 0);
+
+		m_indexBuffer.create();
+		const int a_index = m_program.attributeLocation("index");
+		f->glEnableVertexAttribArray(a_index);
+		f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
+		f->glVertexAttribIPointer(a_index, 1, GL_INT, false, 0);
+		f->glVertexAttribDivisor(a_index, 1);
 	}
 };

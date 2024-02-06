@@ -27,6 +27,12 @@ target_sources(splatlib
     
 )
 
+target_link_libraries(splatlib PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::OpenGL
+)
+
 target_link_libraries(splatty PRIVATE
     Qt6::Core
     Qt6::Gui
