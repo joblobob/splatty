@@ -22,6 +22,7 @@ add_library(splatlib)
 target_sources(splatlib
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES FILES 
+        compiletimestuff.ixx
         splatty.ixx
         shaders.ixx
     
