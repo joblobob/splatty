@@ -27,6 +27,12 @@ export import shaders;
 
 import splatmath;
 
+static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
+
+export std::vector<float> viewMatrix = defaultViewMatrix;
+
+export constexpr int focalWidth  = 1500;
+export constexpr int focalHeight = 1500;
 
 export struct worker {
 	worker() : m_texture(QOpenGLTexture::Target::Target2D)
@@ -71,7 +77,6 @@ export struct worker {
 	QOpenGLTexture m_texture;
 	QOpenGLShaderProgram m_program;
 	QOpenGLVertexArrayObject m_vao;
-	bool gotTexture = false;
 
 	int m_projMatrixLoc = 0;
 	int m_viewPortLoc   = 0;
@@ -213,9 +218,8 @@ export struct worker {
 	void throttledSort()
 	{
 		if (!sortRunning) {
-			sortRunning                       = true;
-			const std::vector<float> lastView = viewProj;
-			runSort(lastView);
+			sortRunning = true;
+			runSort(viewProj);
 			sortRunning = false;
 			// when the view changes, we should re-do the sort
 		}
@@ -283,7 +287,6 @@ export struct worker {
 		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
 		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-		//m_texture = new QOpenGLTexture(QOpenGLTexture::Target::Target2D);
 		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
 
 		auto u_textureLocation = m_program.uniformLocation("u_texture");

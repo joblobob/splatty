@@ -15,13 +15,6 @@ module;
 
 export module splatmath;
 
-static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
-
-export std::vector<float> viewMatrix = defaultViewMatrix;
-
-export constexpr int focalWidth  = 1500;
-export constexpr int focalHeight = 1500;
-
 
 export constexpr std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)
 {

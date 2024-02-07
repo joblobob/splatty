@@ -18,7 +18,7 @@ void GLWindowSplat::paintGL()
 	// *** interact with the world ON
 	auto inv = invert4(viewMatrix);
 
-	// code a propos des activeskeys pas ré-écrit
+	// code a propos des activeskeys pas rÃ©-Ã©crit
 	//inv = rotate4(inv, std::sin(16.0f / 2000.5f), 1, -1, 1);
 	//inv        = translate4(inv, 0.05, 0.05, -0.5);
 
