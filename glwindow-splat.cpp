@@ -24,7 +24,7 @@ void GLWindowSplat::paintGL()
 
 	viewMatrix = invert4(inv);
 
-	auto viewProj = multiply4(m_worker.m_projectionMatrix, viewMatrix);
+	auto viewProj = multiply4(m_worker.gl.m_projectionMatrix, viewMatrix);
 	// *** interact with the world OFF
 
 	// set the view to the new coordinates

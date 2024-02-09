@@ -22,20 +22,13 @@ module;
 
 export module splatty;
 
-// when you import splatty, you also get the shaders, because they go together, but could be loaded independently
-export import shaders;
+import glsplat;
 
 import splatmath;
 
-static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
-
-export std::vector<float> viewMatrix = defaultViewMatrix;
-
-export constexpr int focalWidth  = 1500;
-export constexpr int focalHeight = 1500;
 
 export struct worker {
-	worker() : m_texture(QOpenGLTexture::Target::Target2D)
+	worker()
 	{
 		// Construct a data object by reading from file
 		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
@@ -55,7 +48,8 @@ export struct worker {
 			memcpy(&f, &b, sizeof(f));
 			buffer.push_back(f);
 		}
-		vertexCount = (u_buffer.size() / rowLength);
+		vertexCount    = (u_buffer.size() / rowLength);
+		gl.vertexCount = vertexCount;
 	}
 	std::vector<float> buffer;
 	std::vector<unsigned char> u_buffer;
@@ -66,7 +60,7 @@ export struct worker {
 	// XYZ - Scale (Float32)
 	// RGBA - colors (uint8)
 	// IJKL - quaternion/rot (uint8)
-	const int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+
 	std::vector<float> lastProj;
 	int lastVertexCount = 0;
 	std::vector<unsigned int> texdata;
@@ -74,18 +68,8 @@ export struct worker {
 	int texheight;
 	std::vector<unsigned int> depthIndex;
 
-	QOpenGLTexture m_texture;
-	QOpenGLShaderProgram m_program;
-	QOpenGLVertexArrayObject m_vao;
+	glsplat gl;
 
-	int m_projMatrixLoc = 0;
-	int m_viewPortLoc   = 0;
-	int m_focalLoc      = 0;
-	int m_viewLoc       = 0;
-	QOpenGLBuffer m_indexBuffer;
-	QOpenGLBuffer m_vertexBuffer;
-
-	std::vector<float> m_projectionMatrix;
 
 
 	void generateTexture()
@@ -160,7 +144,7 @@ export struct worker {
 			texdata[8 * i + 6] = packHalf2x16(4 * sigma[4], 4 * sigma[5]);
 		}
 
-		setTextureData();
+		gl.setTextureData(texdata, texwidth, texheight);
 	}
 
 	void runSort(const std::vector<float>& viewProj)
@@ -209,7 +193,7 @@ export struct worker {
 
 		lastProj = viewProj;
 
-		setDepthIndex();
+		gl.setDepthIndex(depthIndex);
 	}
 
 
@@ -231,110 +215,11 @@ export struct worker {
 		viewProj = newviewProj;
 		throttledSort();
 
-		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
-		// fps calculations (from paintGL)
-		if (vertexCount > 0) {
-			f->glUniformMatrix4fv(m_viewLoc, 1, false, viewMatrix.data());
-			f->glClear(GL_COLOR_BUFFER_BIT);
-			QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, vertexCount);
-		} else {
-			f->glClear(GL_COLOR_BUFFER_BIT);
-		}
+		gl.viewChanged();
 	}
 
 
-	void initializeGL()
-	{
-		//QOpenGLDebugLogger* logger = new QOpenGLDebugLogger(this);
-		//connect(logger, &QOpenGLDebugLogger::messageLogged, [&](const QOpenGLDebugMessage& debugMessage) { qCritical() << debugMessage; });
-		//logger->initialize(); // initializes in the current context, i.e. ctx
-		//logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
+	void initializeGL() { gl.initializeGL(); }
 
-		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
-
-		m_program.addShaderFromSourceCode(QOpenGLShader::Vertex, ShaderSource::vertex);
-		m_program.addShaderFromSourceCode(QOpenGLShader::Fragment, ShaderSource::fragment);
-		m_program.link();
-
-		m_program.bind();
-
-		// Create a VAO. Not strictly required for ES 3, but it is for plain OpenGL.
-
-		if (m_vao.create())
-			m_vao.bind();
-
-		f->glDisable(GL_DEPTH_TEST); // Disable depth testing
-
-		f->glEnable(GL_BLEND);
-		f->glBlendFuncSeparate(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ONE_MINUS_DST_ALPHA, GL_ONE);
-
-		m_projMatrixLoc = m_program.uniformLocation("projection");
-		m_viewPortLoc   = m_program.uniformLocation("viewport");
-		m_focalLoc      = m_program.uniformLocation("focal");
-		m_viewLoc       = m_program.uniformLocation("view");
-
-		// positions
-		const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
-
-		m_vertexBuffer.create();
-
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
-		f->glBufferData(GL_ARRAY_BUFFER, 8 * 4, triangleVertices.data(), GL_STATIC_DRAW);
-		const int a_position = m_program.attributeLocation("position");
-		f->glEnableVertexAttribArray(a_position);
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer.bufferId());
-		f->glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
-
-		auto u_textureLocation = m_program.uniformLocation("u_texture");
-		f->glUniform1i(u_textureLocation, 0);
-
-		m_indexBuffer.create();
-		const int a_index = m_program.attributeLocation("index");
-		f->glEnableVertexAttribArray(a_index);
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
-		f->glVertexAttribIPointer(a_index, 1, GL_INT, false, 0);
-		f->glVertexAttribDivisor(a_index, 1);
-	}
-
-	void resizeGL(int w, int h)
-	{
-		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
-		GLfloat tabFloat[] = { focalWidth, focalHeight };
-		f->glUniform2fv(m_focalLoc, 1, tabFloat);
-		m_projectionMatrix = getProjectionMatrix(focalWidth, focalHeight, w, h);
-
-		GLfloat innerTab[] = { w, h };
-		f->glUniform2fv(m_viewPortLoc, 1, innerTab);
-
-		f->glViewport(0, 0, w, h);
-		f->glUniformMatrix4fv(m_projMatrixLoc, 1, false, m_projectionMatrix.data());
-	}
-
-	void setTextureData()
-	{
-		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
-		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		f->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32UI, texwidth, texheight, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT, texdata.data());
-		f->glActiveTexture(GL_TEXTURE0);
-		f->glBindTexture(GL_TEXTURE_2D, m_texture.textureId());
-	}
-
-	void setDepthIndex()
-	{
-		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
-
-		f->glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer.bufferId());
-		f->glBufferData(GL_ARRAY_BUFFER, depthIndex.size() * 4, depthIndex.data(), GL_DYNAMIC_DRAW);
-	}
+	void resizeGL(int w, int h) { gl.resizeGL(w, h); }
 };
