@@ -12,13 +12,9 @@ module;
 #include <print>
 #include <vector>
 
-#include <QFile>
-#include <QOpenGLBuffer>
-#include <QOpenGLContext>
-#include <QOpenGLExtraFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLTexture>
-#include <QOpenGLVertexArrayObject>
+#include <filesystem>
+#include <fstream>
+
 
 export module splatty;
 
@@ -28,29 +24,34 @@ import splatmath;
 
 
 export struct worker {
-	worker()
+	worker(const std::filesystem::path& path)
 	{
-		// Construct a data object by reading from file
-		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+		fileRead(path);
 
-
-		QFile splatFile("plush.splat");
-		splatFile.open(QIODevice::ReadOnly);
-		QByteArray splatData = splatFile.readAll();
-		splatFile.close();
-		for (const unsigned char data : splatData) {
-			u_buffer.push_back(data);
-		}
-
-		for (int i = 0; i < splatData.size(); i += 4) {
-			float f;
-			uchar b[] = { splatData[i + 0], splatData[i + 1], splatData[i + 2], splatData[i + 3] };
-			memcpy(&f, &b, sizeof(f));
-			buffer.push_back(f);
-		}
-		vertexCount    = (u_buffer.size() / rowLength);
+		// set vertex count in our openGL helper
 		gl.vertexCount = vertexCount;
 	}
+
+	void fileRead(const std::filesystem::path& path)
+	{
+		// file size
+		auto length = std::filesystem::file_size(path);
+
+		u_buffer.resize(length);
+		buffer.resize(length / 4);
+
+		// read file data
+		std::ifstream inputFile("plush.splat", std::ios_base::binary);
+		inputFile.read(reinterpret_cast<char*>(u_buffer.data()), length);
+		inputFile.close();
+
+		//copy binary to float  with our friend memcpy!
+		memcpy(buffer.data(), u_buffer.data(), length);
+
+		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+		vertexCount             = (u_buffer.size() / rowLength);
+	}
+
 	std::vector<float> buffer;
 	std::vector<unsigned char> u_buffer;
 	int vertexCount = 0;
@@ -63,14 +64,13 @@ export struct worker {
 
 	std::vector<float> lastProj;
 	int lastVertexCount = 0;
+
 	std::vector<unsigned int> texdata;
 	int texwidth;
 	int texheight;
 	std::vector<unsigned int> depthIndex;
 
 	glsplat gl;
-
-
 
 	void generateTexture()
 	{

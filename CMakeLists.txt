@@ -23,7 +23,7 @@ target_sources(splatlib
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES FILES 
         compiletimestuff.ixx
-        glsplat.ixx
+        glsplat.ixx 
         splatty.ixx
         shaders.ixx
     

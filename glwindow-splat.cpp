@@ -1,6 +1,6 @@
 #include "glwindow-splat.h"
 
-GLWindowSplat::GLWindowSplat() {}
+GLWindowSplat::GLWindowSplat() : m_worker(std::filesystem::path { "plush.splat" }) {}
 
 
 void GLWindowSplat::initializeGL()
