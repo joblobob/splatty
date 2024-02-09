@@ -196,24 +196,10 @@ export struct worker {
 		gl.setDepthIndex(depthIndex);
 	}
 
-
-	bool sortRunning = false;
-
-	void throttledSort()
-	{
-		if (!sortRunning) {
-			sortRunning = true;
-			runSort(viewProj);
-			sortRunning = false;
-			// when the view changes, we should re-do the sort
-		}
-	};
-
-
 	void setView(const std::vector<float>& newviewProj)
 	{
 		viewProj = newviewProj;
-		throttledSort();
+		runSort(viewProj);
 
 		gl.viewChanged();
 	}
