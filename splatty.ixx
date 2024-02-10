@@ -85,19 +85,11 @@ export struct splatdata {
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
 		for (int i = 0; i < vertexCount; i++) {
-			// x, y, z
-			unsigned int valx, valy, valz;
-			memcpy(&valx, &buffer[8 * i + 0], 4);
-			memcpy(&valy, &buffer[8 * i + 1], 4);
-			memcpy(&valz, &buffer[8 * i + 2], 4);
-			texdata[8 * i + 0] = valx;
-			texdata[8 * i + 1] = valy;
-			texdata[8 * i + 2] = valz;
+			// x, y, z from float to binary
+			memcpy(&texdata[8 * i + 0], &buffer[8 * i + 0], 12);
 
 			// r, g, b, a
-			unsigned int valrgba;
-			memcpy(&valrgba, &u_buffer[32 * i + 24 + 0], 4);
-			texdata[(8 * i + 7) + 0] = valrgba;
+			memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
 
 			// quaternions
 			std::vector<float> scale = {
