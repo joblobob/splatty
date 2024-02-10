@@ -18,13 +18,12 @@ module;
 
 export module splatty;
 
-import glsplat;
+import splat.opengl;
+import splat.math;
 
-import splatmath;
 
-
-export struct worker {
-	worker(const std::filesystem::path& path)
+export struct splatdata {
+	splatdata(const std::filesystem::path& path)
 	{
 		fileRead(path);
 
@@ -41,7 +40,7 @@ export struct worker {
 		buffer.resize(length / 4);
 
 		// read file data
-		std::ifstream inputFile("plush.splat", std::ios_base::binary);
+		std::ifstream inputFile(path, std::ios_base::binary);
 		inputFile.read(reinterpret_cast<char*>(u_buffer.data()), length);
 		inputFile.close();
 

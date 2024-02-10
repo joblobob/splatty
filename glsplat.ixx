@@ -20,12 +20,11 @@ module;
 #include <QOpenGLTexture>
 #include <QOpenGLVertexArrayObject>
 
-export module glsplat;
+export module splat.opengl;
 
-// when you import splatty, you also get the shaders, because they go together, but could be loaded independently
-export import shaders;
+import splat.shaders;
 
-import splatmath;
+import splat.math;
 
 static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 

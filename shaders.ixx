@@ -7,7 +7,7 @@ module;
 
 #include <string>
 
-export module shaders;
+export module splat.shaders;
 
 export namespace ShaderSource {
 

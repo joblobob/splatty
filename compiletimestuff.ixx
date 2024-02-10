@@ -13,7 +13,7 @@ module;
 #include <vector>
 
 
-export module splatmath;
+export module splat.math;
 
 
 export constexpr std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)

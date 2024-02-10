@@ -18,7 +18,7 @@ public:
 	void paintGL();
 
 private:
-	worker m_worker;
+	splatdata m_worker;
 };
 
 #endif
