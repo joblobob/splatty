@@ -18,22 +18,7 @@ add_executable(splatty WIN32
     main.cpp
 )
 
-add_library(splatlib)
-target_sources(splatlib
-  PUBLIC
-    FILE_SET cxx_modules TYPE CXX_MODULES FILES 
-        compiletimestuff.ixx
-        glsplat.ixx 
-        splatty.ixx
-        shaders.ixx
-    
-)
-
-target_link_libraries(splatlib PRIVATE
-    Qt6::Core
-    Qt6::Gui
-    Qt6::OpenGL
-)
+add_subdirectory(splatlib)
 
 target_link_libraries(splatty PRIVATE
     Qt6::Core
