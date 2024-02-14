@@ -8,6 +8,15 @@ set(Qt6_DIR "C:/Qt/Qt6.6.1/6.6.1/msvc2019_64/lib/cmake/Qt6")
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui OpenGL)
 
+#embed!
+include(FetchContent)
+FetchContent_Declare(
+  battery-embed
+  GIT_REPOSITORY https://github.com/batterycenter/embed.git
+  GIT_TAG        v1.2.8
+)
+FetchContent_MakeAvailable(battery-embed)
+
 add_library(splatlib)
 target_sources(splatlib
   PUBLIC
@@ -17,6 +26,11 @@ target_sources(splatlib
         splatty.ixx
         shaders.ixx
 )
+
+
+#files to embed!
+b_embed(splatlib res/vertexShader.vert)
+b_embed(splatlib res/fragmentShader.frag)
 
 target_link_libraries(splatlib PRIVATE
     Qt6::Core
