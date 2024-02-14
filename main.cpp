@@ -12,15 +12,8 @@ int main(int argc, char* argv[])
 	QSurfaceFormat fmt;
 	fmt.setDepthBufferSize(24);
 	fmt.setOption(QSurfaceFormat::DebugContext);
-
-	// Request OpenGL 3.3 core or OpenGL ES 3.0.
-	if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
-		fmt.setVersion(3, 3);
-		fmt.setProfile(QSurfaceFormat::CoreProfile);
-	}
-	else {
-		fmt.setVersion(3, 0);
-	}
+	fmt.setVersion(3, 3);
+	fmt.setProfile(QSurfaceFormat::CoreProfile);
 
 	QSurfaceFormat::setDefaultFormat(fmt);
 
