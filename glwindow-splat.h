@@ -1,3 +1,6 @@
+/*
+* Splatty main window 
+*/
 
 #ifndef GLWIDGETSPLAT_H
 #define GLWIDGETSPLAT_H
@@ -11,14 +14,16 @@ class GLWindowSplat : public QOpenGLWindow
 	Q_OBJECT
 
 public:
-	GLWindowSplat();
+	GLWindowSplat(const std::filesystem::path& splatFilePath) : m_splatty(splatFilePath) {}
 
-	void initializeGL();
-	void resizeGL(int w, int h);
+	void initializeGL() { m_splatty.initializeGL(); }
+	void resizeGL(int w, int h) { m_splatty.resizeGL(w, h); }
 	void paintGL();
 
+	std::vector<float> worldInteraction(std::vector<float>& viewMatrix);
+
 private:
-	splatdata m_worker;
+	splatdata m_splatty;
 };
 
 #endif

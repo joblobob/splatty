@@ -59,13 +59,9 @@ export struct glsplat {
 		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 		// fps calculations (from paintGL)
-		if (vertexCount > 0) {
-			f->glUniformMatrix4fv(m_viewLoc, 1, false, viewMatrix.data());
-			f->glClear(GL_COLOR_BUFFER_BIT);
-			QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, vertexCount);
-		} else {
-			f->glClear(GL_COLOR_BUFFER_BIT);
-		}
+		f->glUniformMatrix4fv(m_viewLoc, 1, false, viewMatrix.data());
+		f->glClear(GL_COLOR_BUFFER_BIT);
+		QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, vertexCount);
 	}
 
 
