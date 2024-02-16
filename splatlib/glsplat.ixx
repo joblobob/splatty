@@ -6,13 +6,6 @@
 
 module;
 
-
-#include <cmath>
-#include <limits>
-#include <print>
-#include <vector>
-
-#include <QFile>
 #include <QOpenGLBuffer>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -22,9 +15,8 @@ module;
 
 export module splat.opengl;
 
-import splat.shaders;
-
 import splat.math;
+import splat.shaders;
 
 static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 
@@ -52,8 +44,6 @@ export struct glsplat {
 
 	std::vector<float> m_projectionMatrix;
 
-
-
 	void viewChanged()
 	{
 		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
@@ -63,7 +53,6 @@ export struct glsplat {
 		f->glClear(GL_COLOR_BUFFER_BIT);
 		QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, vertexCount);
 	}
-
 
 	void initializeGL()
 	{

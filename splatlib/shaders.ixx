@@ -6,7 +6,6 @@
 module;
 
 #include <battery/embed.hpp>
-#include <string>
 
 export module splat.shaders;
 
