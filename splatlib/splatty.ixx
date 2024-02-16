@@ -10,6 +10,7 @@ module;
 #include <cmath>
 #include <limits>
 #include <print>
+#include <ranges>
 #include <vector>
 
 #include <filesystem>
@@ -91,12 +92,7 @@ export struct splatdata {
 			// r, g, b, a
 			memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
 
-			// quaternions
-			std::vector<float> scale = {
-				buffer[8 * i + 3 + 0],
-				buffer[8 * i + 3 + 1],
-				buffer[8 * i + 3 + 2],
-			};
+
 
 			std::vector<float> rot = { (float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
 				(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
@@ -117,9 +113,22 @@ export struct splatdata {
 				2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
 				1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
 			};
-			for (int i = 0; i < M.size(); i++) {
-				M[i] = M[i] * scale[std::floor(i / 3)];
-			}
+
+			// quaternions
+			std::vector<float> scale = {
+				buffer[8 * i + 3 + 0],
+				buffer[8 * i + 3 + 1],
+				buffer[8 * i + 3 + 2],
+				buffer[8 * i + 3 + 0],
+				buffer[8 * i + 3 + 1],
+				buffer[8 * i + 3 + 2],
+				buffer[8 * i + 3 + 0],
+				buffer[8 * i + 3 + 1],
+				buffer[8 * i + 3 + 2],
+			};
+
+			std::ranges::transform(M, scale, M.begin(), std::multiplies<float>());
+
 
 			const std::vector<float> sigma = {
 				M[0] * M[0] + M[3] * M[3] + M[6] * M[6],
