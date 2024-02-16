@@ -99,35 +99,21 @@ export struct splatdata {
 				(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
 				(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f };
 
-			// Compute the matrix product of S and R (M = S * R)
-			std::vector<float> M = {
-				1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]),
-				2.0f * (rot[1] * rot[2] + rot[0] * rot[3]),
-				2.0f * (rot[1] * rot[3] - rot[0] * rot[2]),
-
-				2.0f * (rot[1] * rot[2] - rot[0] * rot[3]),
-				1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]),
-				2.0f * (rot[2] * rot[3] + rot[0] * rot[1]),
-
-				2.0f * (rot[1] * rot[3] + rot[0] * rot[2]),
-				2.0f * (rot[2] * rot[3] - rot[0] * rot[1]),
-				1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]),
-			};
-
 			// quaternions
-			std::vector<float> scale = {
-				buffer[8 * i + 3 + 0],
-				buffer[8 * i + 3 + 1],
-				buffer[8 * i + 3 + 2],
-				buffer[8 * i + 3 + 0],
-				buffer[8 * i + 3 + 1],
-				buffer[8 * i + 3 + 2],
-				buffer[8 * i + 3 + 0],
-				buffer[8 * i + 3 + 1],
-				buffer[8 * i + 3 + 2],
-			};
+			std::vector<float> scale = { buffer[8 * i + 3 + 0], buffer[8 * i + 3 + 1], buffer[8 * i + 3 + 2] };
 
-			std::ranges::transform(M, scale, M.begin(), std::multiplies<float>());
+			// Compute the matrix product of S and R (M = S * R)
+			std::vector<float> M = { scale[0] * (1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3])),
+				scale[1] * (2.0f * (rot[1] * rot[2] + rot[0] * rot[3])),
+				scale[2] * (2.0f * (rot[1] * rot[3] - rot[0] * rot[2])),
+
+				scale[0] * (2.0f * (rot[1] * rot[2] - rot[0] * rot[3])),
+				scale[1] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3])),
+				scale[2] * (2.0f * (rot[2] * rot[3] + rot[0] * rot[1])),
+
+				scale[0] * (2.0f * (rot[1] * rot[3] + rot[0] * rot[2])),
+				scale[1] * (2.0f * (rot[2] * rot[3] - rot[0] * rot[1])),
+				scale[2] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2])) };
 
 
 			const std::vector<float> sigma = {
