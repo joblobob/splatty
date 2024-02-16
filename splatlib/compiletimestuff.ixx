@@ -185,5 +185,11 @@ export int floatToHalf(float val)
 
 export int packHalf2x16(float x, float y)
 {
-	return unsigned int(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
+	int fthX              = floatToHalf(x);
+	int fthY              = floatToHalf(y);
+	int shifted           = fthY << 16;
+	unsigned int realThen = fthX | fthY;
+	unsigned int dude     = static_cast<unsigned int>(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
+	unsigned int dude2    = static_cast<unsigned int>(floatToHalf(x) | (floatToHalf(y) << 16));
+	return static_cast<unsigned int>(floatToHalf(x) | (floatToHalf(y) << 16)); // the right shift is useless now?
 }
