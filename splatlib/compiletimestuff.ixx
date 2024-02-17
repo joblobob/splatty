@@ -12,7 +12,8 @@ module;
 #include <print>
 #include <vector>
 
-
+#include <bit>
+#include <bitset>
 export module splat.math;
 
 
@@ -162,10 +163,8 @@ export int floatToHalf(float val)
 	int exp  = (f >> 23) & 0x00ff;
 	int frac = f & 0x007fffff;
 
-	int newExp;
-	if (exp == 0) {
-		newExp = 0;
-	} else if (exp < 113) {
+	int newExp = 0;
+	if (exp < 113) {
 		newExp = 0;
 		frac |= 0x00800000;
 		frac = frac >> (113 - exp);
@@ -183,13 +182,7 @@ export int floatToHalf(float val)
 	return (sign << 15) | (newExp << 10) | (frac >> 13);
 }
 
-export int packHalf2x16(float x, float y)
+export unsigned int packHalf2x16(float x, float y)
 {
-	int fthX              = floatToHalf(x);
-	int fthY              = floatToHalf(y);
-	int shifted           = fthY << 16;
-	unsigned int realThen = fthX | fthY;
-	unsigned int dude     = static_cast<unsigned int>(floatToHalf(x) | (floatToHalf(y) << 16)) >> 0;
-	unsigned int dude2    = static_cast<unsigned int>(floatToHalf(x) | (floatToHalf(y) << 16));
-	return static_cast<unsigned int>(floatToHalf(x) | (floatToHalf(y) << 16)); // the right shift is useless now?
+	return std::bitset<32>(floatToHalf(x) | floatToHalf(y) << 16).to_ulong();
 }

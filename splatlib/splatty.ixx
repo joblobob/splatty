@@ -93,14 +93,13 @@ export struct splatdata {
 			memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
 
 
-
-			std::vector<float> rot = { (float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
+			const std::vector<float> rot = { (float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
 				(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
 				(float)(u_buffer[32 * i + 28 + 2] - 128.0f) / 128.0f,
 				(float)(u_buffer[32 * i + 28 + 3] - 128.0f) / 128.0f };
 
 			// quaternions
-			std::vector<float> scale = { buffer[8 * i + 3 + 0], buffer[8 * i + 3 + 1], buffer[8 * i + 3 + 2] };
+			const std::vector<float> scale = { buffer[8 * i + 3 + 0], buffer[8 * i + 3 + 1], buffer[8 * i + 3 + 2] };
 
 			// Compute the matrix product of S and R (M = S * R)
 			std::vector<float> M = { scale[0] * (1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3])),
