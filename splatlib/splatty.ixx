@@ -30,6 +30,7 @@ export struct splatdata {
 
 		// set vertex count in our openGL helper
 		gl.vertexCount = vertexCount;
+		depthIndex.resize(vertexCount + 1);
 	}
 
 	void fileRead(const std::filesystem::path& path)
@@ -74,10 +75,7 @@ export struct splatdata {
 
 	void generateTexture()
 	{
-		if (buffer.empty())
-			return;
-
-		texwidth  = 1024 * 2;                                              // Set to your desired width
+		texwidth  = 2048;                                                  // Set to your desired width
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
 		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
@@ -134,9 +132,6 @@ export struct splatdata {
 
 	void runSort(const std::vector<float>& viewProj)
 	{
-		if (buffer.empty())
-			return;
-
 		if (lastVertexCount == vertexCount) {
 			float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
 			if (std::abs(dot - 1) < 0.01) {
@@ -150,10 +145,11 @@ export struct splatdata {
 		//console.time("sort");
 		int maxDepth = INT_MIN;
 		int minDepth = INT_MAX;
-		std::vector<int> sizeList(vertexCount);
+		std::vector<unsigned int> sizeList(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
 			int depth   = (viewProj[2] * buffer[8 * i + 0] + viewProj[6] * buffer[8 * i + 1] + viewProj[10] * buffer[8 * i + 2]) * 4096;
 			sizeList[i] = depth;
+
 			if (depth > maxDepth)
 				maxDepth = depth;
 			if (depth < minDepth)
@@ -161,18 +157,21 @@ export struct splatdata {
 		}
 
 		// This is a 16 bit single-pass counting sort
-		float depthInv = (256 * 256) / (maxDepth - minDepth);
-		std::vector<int> counts0(256 * 256);
+		float depthInv = (65536) / (maxDepth - minDepth);
+		std::vector<int> counts0(65536);
+
 		for (int i = 0; i < vertexCount; i++) {
 			sizeList[i] = std::floor((sizeList[i] - minDepth) * depthInv);
 			counts0[sizeList[i]]++;
 		}
-		std::vector<int> starts0(256 * 256);
-		for (int i = 1; i < 256 * 256; i++)
+
+		std::vector<int> starts0(65536);
+		for (int i = 1; i < 65536; i++)
 			starts0[i] = starts0[i - 1] + counts0[i - 1];
-		depthIndex.resize(vertexCount + 1);
-		for (int i = 0; i < vertexCount; i++)
+
+		for (int i = 0; i < vertexCount; i++) {
 			depthIndex[starts0[sizeList[i]]++] = i;
+		}
 
 		//console.timeEnd("sort");
 
