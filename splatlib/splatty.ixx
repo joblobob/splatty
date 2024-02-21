@@ -130,6 +130,7 @@ export struct splatdata {
 		gl.setTextureData(texdata, texwidth, texheight);
 	}
 
+
 	void runSort(const std::vector<float>& viewProj)
 	{
 		if (lastVertexCount == vertexCount) {
@@ -156,19 +157,21 @@ export struct splatdata {
 				minDepth = depth;
 		}
 
+		constexpr int sizeSort = 256 * 256;
 		// This is a 16 bit single-pass counting sort
-		float depthInv = (65536) / (maxDepth - minDepth);
-		std::vector<int> counts0(65536);
+		float depthInv = (sizeSort) / (maxDepth - minDepth);
+		std::vector<int> counts0(sizeSort);
 
 		//normalize depth
-		std::ranges::transform(sizeList, sizeList.begin(), [&](unsigned int val) {
-			unsigned int newVal = std::floor((val - minDepth) * depthInv);
-			counts0[newVal]++; //count occurences
-			return newVal;
-		});
 
-		std::vector<int> starts0(65536);
-		for (int i = 1; i < 65536; i++)
+		sizeList | std::views::transform([&](unsigned int& val) {
+			val = std::floor((val - minDepth) * depthInv);
+			counts0[val]++; //count occurrences
+			return val;
+		}) | std::ranges::to<std::vector>();
+
+		std::vector<int> starts0(sizeSort);
+		for (int i = 1; i < sizeSort; i++)
 			starts0[i] = starts0[i - 1] + counts0[i - 1];
 
 		for (int i = 0; i < vertexCount; i++) {
