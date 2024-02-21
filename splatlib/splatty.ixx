@@ -15,7 +15,7 @@ module;
 
 #include <filesystem>
 #include <fstream>
-
+#include <ranges>
 
 export module splatty;
 
@@ -160,10 +160,12 @@ export struct splatdata {
 		float depthInv = (65536) / (maxDepth - minDepth);
 		std::vector<int> counts0(65536);
 
-		for (int i = 0; i < vertexCount; i++) {
-			sizeList[i] = std::floor((sizeList[i] - minDepth) * depthInv);
-			counts0[sizeList[i]]++;
-		}
+		//normalize depth
+		std::ranges::transform(sizeList, sizeList.begin(), [&](unsigned int val) {
+			unsigned int newVal = std::floor((val - minDepth) * depthInv);
+			counts0[newVal]++; //count occurences
+			return newVal;
+		});
 
 		std::vector<int> starts0(65536);
 		for (int i = 1; i < 65536; i++)
