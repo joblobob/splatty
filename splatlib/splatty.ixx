@@ -9,6 +9,7 @@ module;
 
 #include <cmath>
 #include <limits>
+#include <mdspan>
 #include <print>
 #include <ranges>
 #include <vector>
@@ -47,7 +48,7 @@ export struct splatdata {
 		inputFile.close();
 
 		//copy binary to float  with our friend memcpy!
-		memcpy(buffer.data(), u_buffer.data(), length);
+		std::memcpy(buffer.data(), u_buffer.data(), length);
 
 		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 		vertexCount             = (u_buffer.size() / rowLength);
@@ -79,16 +80,17 @@ export struct splatdata {
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
 		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
+		auto ms2 = std::mdspan(buffer.data(), vertexCount, 12);
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
 		for (int i = 0; i < vertexCount; i++) {
 			// x, y, z from float to binary
-			memcpy(&texdata[8 * i + 0], &buffer[8 * i + 0], 12);
+			std::memcpy(&texdata[8 * i + 0], &buffer[8 * i + 0], 12);
 
 			// r, g, b, a
-			memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
+			std::memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
 
 
 			const std::vector<float> rot = { (float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,

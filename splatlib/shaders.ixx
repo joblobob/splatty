@@ -11,10 +11,8 @@ export module splat.shaders;
 
 //Please Put My Data In My Gotdang Executable And Stop Doing Crazy Nonsense, The Feature
 
-export namespace ShaderSource {
+export struct ShaderSource {
+	static inline const auto vertex   = b::embed<"res/vertexShader.vert">().data();
+	static inline const auto fragment = b::embed<"res/fragmentShader.frag">().data();
 
-const char* vertex = b::embed<"res/vertexShader.vert">().data();
-
-const char* fragment = b::embed<"res/fragmentShader.frag">().data();
-
-} // namespace ShaderSource
+}; // namespace ShaderSource
