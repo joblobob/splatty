@@ -80,18 +80,32 @@ export struct splatdata {
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
 		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
+		// yay mdspan for access directly, but not necessarly for ranging!
 		auto ms2 = std::mdspan(buffer.data(), vertexCount, 12);
+
+
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
-		for (int i = 0; i < vertexCount; i++) {
+
+
+
+		for (auto pos : std::views::iota(0u, buffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
-			std::memcpy(&texdata[8 * i + 0], &buffer[8 * i + 0], 12);
+			std::memcpy(&texdata[pos], &buffer[pos], 12);
 
 			// r, g, b, a
-			std::memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
+			std::memcpy(&texdata[pos + 7], &u_buffer[4 * pos + 24], 4);
+		}
 
+
+		for (int i = 0; i < vertexCount; i++) {
+			// x, y, z from float to binary
+			//std::memcpy(&texdata[8 * i + 0], &buffer[8 * i + 0], 12);
+
+			// r, g, b, a
+			//std::memcpy(&texdata[(8 * i + 7) + 0], &u_buffer[32 * i + 24 + 0], 4);
 
 			const std::vector<float> rot = { (float)(u_buffer[32 * i + 28 + 0] - 128.0f) / 128.0f,
 				(float)(u_buffer[32 * i + 28 + 1] - 128.0f) / 128.0f,
