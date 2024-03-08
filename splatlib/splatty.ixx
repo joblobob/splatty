@@ -81,19 +81,30 @@ export struct splatdata {
 		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
 		// yay mdspan for access directly, but not necessarly for ranging!
-		auto ms2 = std::mdspan(buffer.data(), vertexCount, 12);
-
+		auto mdbuffer         = std::mdspan(buffer.data(), vertexCount, 8);
+		std::mdspan mdtexdata = std::mdspan(texdata.data(), vertexCount, 8);
 
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
 
-
+		struct floatPosition {
+			float x, y, z;
+		};
+		struct uintPosition {
+			unsigned int x, y, z;
+		};
 
 		for (auto pos : std::views::iota(0u, buffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
-			std::memcpy(&texdata[pos], &buffer[pos], 12);
+			const auto& [x, y, z] = std::bit_cast<uintPosition>(floatPosition { buffer[pos], buffer[pos + 1], buffer[pos + 2] });
+
+			texdata[pos]     = x;
+			texdata[pos + 1] = y;
+			texdata[pos + 2] = z;
+
+			//std::memcpy(&texdata[pos], &buffer[pos], 12);
 
 			// r, g, b, a
 			std::memcpy(&texdata[pos + 7], &u_buffer[4 * pos + 24], 4);
