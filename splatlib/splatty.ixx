@@ -83,15 +83,23 @@ export struct splatdata {
 		// yay mdspan for access directly, but not necessarly for ranging!
 		auto mdbuffer  = std::mdspan(buffer.data(), vertexCount, 8);
 		auto mdtexdata = std::mdspan(texdata.data(), vertexCount, 8);
+
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
-
+		constexpr auto to_uints = [](float v) {
+			return std::bit_cast<unsigned int>(v);
+		};
+		const auto uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
 
 		for (unsigned int i : std::views::iota(0u, buffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
-			std::memcpy(&texdata[i], &buffer[i], 12);
+			texdata[i]     = uintBuffer[i];
+			texdata[i + 1] = uintBuffer[i + 1];
+			texdata[i + 2] = uintBuffer[i + 2];
+
+			//std::memcpy(&texdata[i], &buffer[i], 12);
 
 			// r, g, b, a
 			std::memcpy(&texdata[i + 7], &u_buffer[4 * i + 24], 4);
