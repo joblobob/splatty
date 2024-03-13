@@ -18,8 +18,6 @@ module;
 #include <fstream>
 #include <ranges>
 
-#include <QElapsedTimer>
-
 export module splatty;
 
 import splat.opengl;
@@ -162,10 +160,7 @@ export struct splatdata {
 				return;
 			}
 		} else {
-			QElapsedTimer timer;
-			timer.start();
 			generateTexture();
-			qCritical() << timer.elapsed();
 			lastVertexCount = vertexCount;
 		}
 
