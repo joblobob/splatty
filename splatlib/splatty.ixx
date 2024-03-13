@@ -74,6 +74,8 @@ export struct splatdata {
 
 	glsplat gl;
 
+	unsigned int rendu = 1;
+
 	void generateTexture()
 	{
 		texwidth  = 2048;                                                  // Set to your desired width
@@ -101,8 +103,11 @@ export struct splatdata {
 		};
 
 		std::vector<unsigned int> uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
-
-		for (unsigned int i : std::views::iota(0u, buffer.size()) | std::views::stride(8)) {
+		if (rendu >= buffer.size())
+			rendu = buffer.size();
+		else
+			rendu += 32;
+		for (unsigned int i : std::views::iota(0u, rendu) | std::views::stride(8)) {
 			// x, y, z from float to binary
 			//texdata[i]     = uintBuffer[i];
 			//texdata[i + 1] = uintBuffer[i + 1];
@@ -151,18 +156,17 @@ export struct splatdata {
 		gl.setTextureData(texdata, texwidth, texheight);
 	}
 
-
 	void runSort(const std::vector<float>& viewProj)
 	{
-		if (lastVertexCount == vertexCount) {
-			float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
-			if (std::abs(dot - 1) < 0.01) {
-				return;
-			}
-		} else {
-			generateTexture();
-			lastVertexCount = vertexCount;
-		}
+		//if (lastVertexCount == vertexCount) {
+		//	float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+		//	if (std::abs(dot - 1) < 0.01) {
+		//		return;
+		//	}
+		//} else {
+		generateTexture();
+		lastVertexCount = vertexCount;
+		//}
 
 		//console.time("sort");
 		int maxDepth = INT_MIN;
