@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 	QGuiApplication app(argc, argv);
 
 	GLWindowSplat window { std::filesystem::path { "plush.splat" } };
-	window.show();
+	window.showMaximized();
 
 	return app.exec();
 }
