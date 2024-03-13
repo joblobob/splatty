@@ -91,24 +91,28 @@ export struct splatdata {
 		constexpr auto to_uints = [](float v) {
 			return std::bit_cast<unsigned int>(v);
 		};
-		const auto uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
+
+		constexpr auto rotation = [](auto itt) {
+			std::array<float, 4> rot { std::bit_cast<float>(*itt - 128.0f) / 128.0f,
+				std::bit_cast<float>(*(itt + 1) - 128.0f) / 128.0f,
+				std::bit_cast<float>(*(itt + 2) - 128.0f) / 128.0f,
+				std::bit_cast<float>(*(itt + 3) - 128.0f) / 128.0f };
+			return rot;
+		};
+
+		std::vector<unsigned int> uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
 
 		for (unsigned int i : std::views::iota(0u, buffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
-			texdata[i]     = uintBuffer[i];
-			texdata[i + 1] = uintBuffer[i + 1];
-			texdata[i + 2] = uintBuffer[i + 2];
-
-			//std::memcpy(&texdata[i], &buffer[i], 12);
+			//texdata[i]     = uintBuffer[i];
+			//texdata[i + 1] = uintBuffer[i + 1];
+			//texdata[i + 2] = uintBuffer[i + 2];
+			std::ranges::copy_n(uintBuffer.begin() + i, 3, texdata.begin() + i);
 
 			// r, g, b, a
 			std::memcpy(&texdata[i + 7], &u_buffer[4 * i + 24], 4);
 
-
-			const std::vector<float> rot { std::bit_cast<float>(u_buffer[4 * i + 28 + 0] - 128.0f) / 128.0f,
-				std::bit_cast<float>(u_buffer[4 * i + 28 + 1] - 128.0f) / 128.0f,
-				std::bit_cast<float>(u_buffer[4 * i + 28 + 2] - 128.0f) / 128.0f,
-				std::bit_cast<float>(u_buffer[4 * i + 28 + 3] - 128.0f) / 128.0f };
+			const auto rot = rotation(u_buffer.begin() + 4 * i + 28 + 0);
 
 			// quaternions
 			const std::vector<float> scale = { buffer[i + 3 + 0], buffer[i + 3 + 1], buffer[i + 3 + 2] };
