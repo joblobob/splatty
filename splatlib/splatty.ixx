@@ -18,6 +18,8 @@ module;
 #include <fstream>
 #include <ranges>
 
+#include <QElapsedTimer>
+
 export module splatty;
 
 import splat.opengl;
@@ -93,13 +95,14 @@ export struct splatdata {
 
 		std::vector<unsigned int> uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
 
-		if (rendu >= buffer.size())
-			rendu = buffer.size();
-		else
-			rendu += 2048;
+		//if (rendu >= buffer.size())
+		rendu = buffer.size();
+		//	else
+		//		rendu += 2048;
 
 		std::array<float, 4> rot;
-		std::array<float, 3> scale;
+		std::array<float, 9> M;
+		std::array<float, 6> sigma;
 
 		for (unsigned int i : std::views::iota(0u, rendu) | std::views::stride(8)) {
 			// x, y, z from float to binary
@@ -112,38 +115,32 @@ export struct splatdata {
 			std::memcpy(&texdata[i + 7], &u_buffer[4 * i + 24], 4);
 
 			// quaternions
-			rot[0] = rotation(u_buffer, Quaternion::I, i);
-			rot[1] = rotation(u_buffer, Quaternion::J, i);
-			rot[2] = rotation(u_buffer, Quaternion::K, i);
-			rot[3] = rotation(u_buffer, Quaternion::L, i);
 
-			scale[0] = buffer[i + 3 + 0];
-			scale[1] = buffer[i + 3 + 1];
-			scale[2] = buffer[i + 3 + 2];
-
+			rot[0] = std::bit_cast<float>(u_buffer[4 * i + 28 + 0] - 128.0f) / 128.0f;
+			rot[1] = std::bit_cast<float>(u_buffer[4 * i + 28 + 1] - 128.0f) / 128.0f;
+			rot[2] = std::bit_cast<float>(u_buffer[4 * i + 28 + 2] - 128.0f) / 128.0f;
+			rot[3] = std::bit_cast<float>(u_buffer[4 * i + 28 + 3] - 128.0f) / 128.0f;
 
 			// Compute the matrix product of S and R (M = S * R)
-			const std::vector<float> M = { scale[0] * (1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3])),
-				scale[1] * (2.0f * (rot[1] * rot[2] + rot[0] * rot[3])),
-				scale[2] * (2.0f * (rot[1] * rot[3] - rot[0] * rot[2])),
+			M[0] = buffer[i + 3 + 0] * (1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]));
+			M[1] = buffer[i + 3 + 1] * (2.0f * (rot[1] * rot[2] + rot[0] * rot[3]));
+			M[2] = buffer[i + 3 + 2] * (2.0f * (rot[1] * rot[3] - rot[0] * rot[2]));
 
-				scale[0] * (2.0f * (rot[1] * rot[2] - rot[0] * rot[3])),
-				scale[1] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3])),
-				scale[2] * (2.0f * (rot[2] * rot[3] + rot[0] * rot[1])),
+			M[3] = buffer[i + 3 + 0] * (2.0f * (rot[1] * rot[2] - rot[0] * rot[3]));
+			M[4] = buffer[i + 3 + 1] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]));
+			M[5] = buffer[i + 3 + 2] * (2.0f * (rot[2] * rot[3] + rot[0] * rot[1]));
 
-				scale[0] * (2.0f * (rot[1] * rot[3] + rot[0] * rot[2])),
-				scale[1] * (2.0f * (rot[2] * rot[3] - rot[0] * rot[1])),
-				scale[2] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2])) };
+			M[6] = buffer[i + 3 + 0] * (2.0f * (rot[1] * rot[3] + rot[0] * rot[2]));
+			M[7] = buffer[i + 3 + 1] * (2.0f * (rot[2] * rot[3] - rot[0] * rot[1]));
+			M[8] = buffer[i + 3 + 2] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]));
 
+			sigma[0] = M[0] * M[0] + M[3] * M[3] + M[6] * M[6];
+			sigma[1] = M[0] * M[1] + M[3] * M[4] + M[6] * M[7];
+			sigma[2] = M[0] * M[2] + M[3] * M[5] + M[6] * M[8];
+			sigma[3] = M[1] * M[1] + M[4] * M[4] + M[7] * M[7];
+			sigma[4] = M[1] * M[2] + M[4] * M[5] + M[7] * M[8];
+			sigma[5] = M[2] * M[2] + M[5] * M[5] + M[8] * M[8];
 
-			const std::vector<float> sigma = {
-				M[0] * M[0] + M[3] * M[3] + M[6] * M[6],
-				M[0] * M[1] + M[3] * M[4] + M[6] * M[7],
-				M[0] * M[2] + M[3] * M[5] + M[6] * M[8],
-				M[1] * M[1] + M[4] * M[4] + M[7] * M[7],
-				M[1] * M[2] + M[4] * M[5] + M[7] * M[8],
-				M[2] * M[2] + M[5] * M[5] + M[8] * M[8],
-			};
 
 			texdata[i + 4] = packHalf2x16(4 * sigma[0], 4 * sigma[1]);
 			texdata[i + 5] = packHalf2x16(4 * sigma[2], 4 * sigma[3]);
@@ -157,15 +154,18 @@ export struct splatdata {
 
 	void runSort(const std::vector<float>& viewProj)
 	{
-		//if (lastVertexCount == vertexCount) {
-		//	float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
-		//	if (std::abs(dot - 1) < 0.01) {
-		//		return;
-		//	}
-		//} else {
-		generateTexture();
-		lastVertexCount = vertexCount;
-		//}
+		if (lastVertexCount == vertexCount) {
+			float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+			if (std::abs(dot - 1) < 0.01) {
+				return;
+			}
+		} else {
+			QElapsedTimer timer;
+			timer.start();
+			generateTexture();
+			qCritical() << timer.elapsed();
+			lastVertexCount = vertexCount;
+		}
 
 		//console.time("sort");
 		int maxDepth = INT_MIN;
