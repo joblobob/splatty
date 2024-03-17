@@ -18,8 +18,6 @@ module;
 #include <fstream>
 #include <ranges>
 
-#include <QElapsedTimer>
-
 export module splatty;
 
 import splat.opengl;
@@ -95,10 +93,10 @@ export struct splatdata {
 
 		std::vector<unsigned int> uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
 
-		//if (rendu >= buffer.size())
-		rendu = buffer.size();
-		//	else
-		//		rendu += 2048;
+		if (rendu >= buffer.size())
+			rendu = buffer.size();
+		else
+			rendu += 4096;
 
 		std::array<float, 4> rot;
 		std::array<float, 9> M;
@@ -154,18 +152,15 @@ export struct splatdata {
 
 	void runSort(const std::vector<float>& viewProj)
 	{
-		if (lastVertexCount == vertexCount) {
-			float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
-			if (std::abs(dot - 1) < 0.01) {
-				return;
-			}
-		} else {
-			QElapsedTimer timer;
-			timer.start();
-			generateTexture();
-			qCritical() << timer.elapsed();
-			lastVertexCount = vertexCount;
-		}
+		//if (lastVertexCount == vertexCount) {
+		//	float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+		//	if (std::abs(dot - 1) < 0.01) {
+		//		return;
+		//	}
+		//} else {
+		generateTexture();
+		lastVertexCount = vertexCount;
+		//}
 
 		//console.time("sort");
 		int maxDepth = INT_MIN;
