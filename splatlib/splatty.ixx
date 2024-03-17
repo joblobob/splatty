@@ -43,8 +43,8 @@ export struct splatdata {
 		buffer.resize(length / 4);
 
 		// read file data
-		std::ifstream inputFile(path, std::ios_base::binary);
-		inputFile.read(reinterpret_cast<char*>(u_buffer.data()), length);
+		std::basic_ifstream<unsigned char, std::char_traits<unsigned char> > inputFile(path, std::ios_base::binary);
+		inputFile.read(u_buffer.data(), length);
 		inputFile.close();
 
 		//copy binary to float  with our friend memcpy!
