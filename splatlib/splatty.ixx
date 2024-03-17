@@ -90,23 +90,17 @@ export struct splatdata {
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
-		constexpr auto to_uints = [](float v) {
-			return std::bit_cast<unsigned int>(v);
-		};
-
-		constexpr auto rotation = [](auto itt) {
-			std::array<float, 4> rot { std::bit_cast<float>(*itt - 128.0f) / 128.0f,
-				std::bit_cast<float>(*(itt + 1) - 128.0f) / 128.0f,
-				std::bit_cast<float>(*(itt + 2) - 128.0f) / 128.0f,
-				std::bit_cast<float>(*(itt + 3) - 128.0f) / 128.0f };
-			return rot;
-		};
 
 		std::vector<unsigned int> uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
+
 		if (rendu >= buffer.size())
 			rendu = buffer.size();
 		else
-			rendu += 32;
+			rendu += 2048;
+
+		std::array<float, 4> rot;
+		std::array<float, 3> scale;
+
 		for (unsigned int i : std::views::iota(0u, rendu) | std::views::stride(8)) {
 			// x, y, z from float to binary
 			//texdata[i]     = uintBuffer[i];
@@ -117,10 +111,15 @@ export struct splatdata {
 			// r, g, b, a
 			std::memcpy(&texdata[i + 7], &u_buffer[4 * i + 24], 4);
 
-			const auto rot = rotation(u_buffer.begin() + 4 * i + 28 + 0);
-
 			// quaternions
-			const std::vector<float> scale = { buffer[i + 3 + 0], buffer[i + 3 + 1], buffer[i + 3 + 2] };
+			rot[0] = rotation(u_buffer, Quaternion::I, i);
+			rot[1] = rotation(u_buffer, Quaternion::J, i);
+			rot[2] = rotation(u_buffer, Quaternion::K, i);
+			rot[3] = rotation(u_buffer, Quaternion::L, i);
+
+			scale[0] = buffer[i + 3 + 0];
+			scale[1] = buffer[i + 3 + 1];
+			scale[2] = buffer[i + 3 + 2];
 
 
 			// Compute the matrix product of S and R (M = S * R)

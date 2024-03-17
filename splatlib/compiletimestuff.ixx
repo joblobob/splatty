@@ -186,3 +186,15 @@ export unsigned int packHalf2x16(float x, float y)
 {
 	return std::bitset<32>(floatToHalf(x) | floatToHalf(y) << 16).to_ulong();
 }
+
+export constexpr unsigned int to_uints(float v)
+{
+	return std::bit_cast<unsigned int>(v);
+};
+
+export enum class Quaternion : int { I, J, K, L };
+
+export constexpr float rotation(std::ranges::contiguous_range auto&& input, Quaternion element, int index)
+{
+	return std::bit_cast<float>(input[4 * index + 28 + std::to_underlying(element)] - 128.0f) / 128.0f;
+};
