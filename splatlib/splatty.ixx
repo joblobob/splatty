@@ -20,11 +20,14 @@ module;
 
 export module splatty;
 
+import splat.data;
 import splat.opengl;
 import splat.math;
 
 
 export struct splatdata {
+	std::unique_ptr<SplatData> m_data;
+
 	splatdata(const std::filesystem::path& path)
 	{
 		fileRead(path);
@@ -36,26 +39,25 @@ export struct splatdata {
 
 	void fileRead(const std::filesystem::path& path)
 	{
+		//runtime to put compilee time^
 		// file size
 		auto length = std::filesystem::file_size(path);
 
+		std::vector<unsigned char> u_buffer;
 		u_buffer.resize(length);
-		buffer.resize(length / 4);
 
 		// read file data
 		std::basic_ifstream<unsigned char, std::char_traits<unsigned char> > inputFile(path, std::ios_base::binary);
 		inputFile.read(u_buffer.data(), length);
 		inputFile.close();
 
-		//copy binary to float  with our friend memcpy!
-		std::memcpy(buffer.data(), u_buffer.data(), length);
 
 		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 		vertexCount             = (u_buffer.size() / rowLength);
+
+		m_data = std::make_unique<SplatData>(vertexCount, u_buffer);
 	}
 
-	std::vector<float> buffer;
-	std::vector<unsigned char> u_buffer;
 	int vertexCount = 0;
 	std::vector<float> viewProj;
 	// 6*4 + 4 + 4 = 8*4
@@ -82,19 +84,13 @@ export struct splatdata {
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
 		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
-		// yay mdspan for access directly, but not necessarly for ranging!
-		auto mdbuffer  = std::mdspan(buffer.data(), vertexCount, 8);
-		auto mdtexdata = std::mdspan(texdata.data(), vertexCount, 8);
-
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
 
-		std::vector<unsigned int> uintBuffer = buffer | std::views::transform(to_uints) | std::ranges::to<std::vector<unsigned int> >();
-
-		if (rendu >= buffer.size())
-			rendu = buffer.size();
+		if (rendu >= m_data->m_floatBuffer.size())
+			rendu = m_data->m_floatBuffer.size();
 		else
 			rendu += 4096;
 
@@ -107,30 +103,30 @@ export struct splatdata {
 			//texdata[i]     = uintBuffer[i];
 			//texdata[i + 1] = uintBuffer[i + 1];
 			//texdata[i + 2] = uintBuffer[i + 2];
-			std::ranges::copy_n(uintBuffer.begin() + i, 3, texdata.begin() + i);
+			std::ranges::copy_n(m_data->m_uintBuffer.begin() + i, 3, texdata.begin() + i);
 
 			// r, g, b, a
-			std::memcpy(&texdata[i + 7], &u_buffer[4 * i + 24], 4);
+			std::memcpy(&texdata[i + 7], &m_data->m_ucharBuffer[4 * i + 24], 4);
 
 			// quaternions
 
-			rot[0] = std::bit_cast<float>(u_buffer[4 * i + 28 + 0] - 128.0f) / 128.0f;
-			rot[1] = std::bit_cast<float>(u_buffer[4 * i + 28 + 1] - 128.0f) / 128.0f;
-			rot[2] = std::bit_cast<float>(u_buffer[4 * i + 28 + 2] - 128.0f) / 128.0f;
-			rot[3] = std::bit_cast<float>(u_buffer[4 * i + 28 + 3] - 128.0f) / 128.0f;
+			rot[0] = std::bit_cast<float>(m_data->m_ucharBuffer[4 * i + 28 + 0] - 128.0f) / 128.0f;
+			rot[1] = std::bit_cast<float>(m_data->m_ucharBuffer[4 * i + 28 + 1] - 128.0f) / 128.0f;
+			rot[2] = std::bit_cast<float>(m_data->m_ucharBuffer[4 * i + 28 + 2] - 128.0f) / 128.0f;
+			rot[3] = std::bit_cast<float>(m_data->m_ucharBuffer[4 * i + 28 + 3] - 128.0f) / 128.0f;
 
 			// Compute the matrix product of S and R (M = S * R)
-			M[0] = buffer[i + 3 + 0] * (1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]));
-			M[1] = buffer[i + 3 + 1] * (2.0f * (rot[1] * rot[2] + rot[0] * rot[3]));
-			M[2] = buffer[i + 3 + 2] * (2.0f * (rot[1] * rot[3] - rot[0] * rot[2]));
+			M[0] = m_data->m_floatBuffer[i + 3 + 0] * (1.0f - 2.0f * (rot[2] * rot[2] + rot[3] * rot[3]));
+			M[1] = m_data->m_floatBuffer[i + 3 + 1] * (2.0f * (rot[1] * rot[2] + rot[0] * rot[3]));
+			M[2] = m_data->m_floatBuffer[i + 3 + 2] * (2.0f * (rot[1] * rot[3] - rot[0] * rot[2]));
 
-			M[3] = buffer[i + 3 + 0] * (2.0f * (rot[1] * rot[2] - rot[0] * rot[3]));
-			M[4] = buffer[i + 3 + 1] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]));
-			M[5] = buffer[i + 3 + 2] * (2.0f * (rot[2] * rot[3] + rot[0] * rot[1]));
+			M[3] = m_data->m_floatBuffer[i + 3 + 0] * (2.0f * (rot[1] * rot[2] - rot[0] * rot[3]));
+			M[4] = m_data->m_floatBuffer[i + 3 + 1] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[3] * rot[3]));
+			M[5] = m_data->m_floatBuffer[i + 3 + 2] * (2.0f * (rot[2] * rot[3] + rot[0] * rot[1]));
 
-			M[6] = buffer[i + 3 + 0] * (2.0f * (rot[1] * rot[3] + rot[0] * rot[2]));
-			M[7] = buffer[i + 3 + 1] * (2.0f * (rot[2] * rot[3] - rot[0] * rot[1]));
-			M[8] = buffer[i + 3 + 2] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]));
+			M[6] = m_data->m_floatBuffer[i + 3 + 0] * (2.0f * (rot[1] * rot[3] + rot[0] * rot[2]));
+			M[7] = m_data->m_floatBuffer[i + 3 + 1] * (2.0f * (rot[2] * rot[3] - rot[0] * rot[1]));
+			M[8] = m_data->m_floatBuffer[i + 3 + 2] * (1.0f - 2.0f * (rot[1] * rot[1] + rot[2] * rot[2]));
 
 			sigma[0] = M[0] * M[0] + M[3] * M[3] + M[6] * M[6];
 			sigma[1] = M[0] * M[1] + M[3] * M[4] + M[6] * M[7];
@@ -167,7 +163,9 @@ export struct splatdata {
 		int minDepth = INT_MAX;
 		std::vector<unsigned int> sizeList(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
-			int depth   = (viewProj[2] * buffer[8 * i + 0] + viewProj[6] * buffer[8 * i + 1] + viewProj[10] * buffer[8 * i + 2]) * 4096;
+			int depth = (viewProj[2] * m_data->m_floatBuffer[8 * i + 0] + viewProj[6] * m_data->m_floatBuffer[8 * i + 1] +
+			                viewProj[10] * m_data->m_floatBuffer[8 * i + 2]) *
+			            4096;
 			sizeList[i] = depth;
 
 			if (depth > maxDepth)
