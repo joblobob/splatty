@@ -26,7 +26,7 @@ export constexpr int focalWidth  = 1500;
 export constexpr int focalHeight = 1500;
 
 export struct glsplat {
-	glsplat() : m_texture(QOpenGLTexture::Target::Target2D) {}
+	glsplat(int vertexCount) : vertexCount(vertexCount), m_texture(QOpenGLTexture::Target::Target2D) {}
 
 	int vertexCount = 0;
 

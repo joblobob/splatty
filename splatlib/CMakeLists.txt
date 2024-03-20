@@ -24,9 +24,9 @@ target_sources(splatlib
         compiletimestuff.ixx
         glsplat.ixx
         splatdata.ixx
+        splatreader.ixx
         splatty.ixx
         shaders.ixx
-        std.ixx
 )
 
 

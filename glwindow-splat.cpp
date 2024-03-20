@@ -18,12 +18,12 @@ std::vector<float> GLWindowSplat::worldInteraction(std::vector<float>& view)
 {
 	auto inv = invert4(view);
 
-	inv = rotate4(inv, std::sin(16.0f / 2000.5f), 1, -1, 1);
-	inv = translate4(inv, 0.05, 0.05, -0.5);
+	//inv = rotate4(inv, std::sin(16.0f / 2000.5f), 1, -1, 1);
+	//inv = translate4(inv, 0.05, 0.05, -0.5);
 
 	view = invert4(inv);
 
-	auto viewProj = multiply4(m_splatty.gl.m_projectionMatrix, view);
+	auto viewProj = multiply4(m_splatty.m_gl->m_projectionMatrix, view);
 
 	return viewProj;
 }

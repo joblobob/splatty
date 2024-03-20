@@ -15,68 +15,48 @@ module;
 #include <vector>
 
 #include <filesystem>
-#include <fstream>
-#include <ranges>
 
 export module splatty;
 
 import splat.data;
 import splat.opengl;
 import splat.math;
+import splat.reader;
 
+// 6*4 + 4 + 4 = 8*4
+// XYZ - Position (Float32)
+// XYZ - Scale (Float32)
+// RGBA - colors (uint8)
+// IJKL - quaternion/rot (uint8)
+constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 
 export struct splatdata {
 	std::unique_ptr<SplatData> m_data;
+	std::unique_ptr<glsplat> m_gl;
+
+	int vertexCount     = 0;
+	int lastVertexCount = 0;
+	std::vector<float> viewProj;
+	std::vector<float> lastProj;
+
+	int texwidth;
+	int texheight;
+	std::vector<unsigned int> texdata;
+	std::vector<unsigned int> depthIndex;
+
+	unsigned int rendu = 1;
 
 	splatdata(const std::filesystem::path& path)
 	{
-		fileRead(path);
+		std::vector<unsigned char> data = Splat::readFromFile(path);
 
 		// set vertex count in our openGL helper
-		gl.vertexCount = vertexCount;
+		vertexCount = (data.size() / rowLength);
 		depthIndex.resize(vertexCount + 1);
+
+		m_data = std::make_unique<SplatData>(vertexCount, data);
+		m_gl   = std::make_unique<glsplat>(vertexCount);
 	}
-
-	void fileRead(const std::filesystem::path& path)
-	{
-		//runtime to put compilee time^
-		// file size
-		auto length = std::filesystem::file_size(path);
-
-		std::vector<unsigned char> u_buffer;
-		u_buffer.resize(length);
-
-		// read file data
-		std::basic_ifstream<unsigned char, std::char_traits<unsigned char> > inputFile(path, std::ios_base::binary);
-		inputFile.read(u_buffer.data(), length);
-		inputFile.close();
-
-
-		constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-		vertexCount             = (u_buffer.size() / rowLength);
-
-		m_data = std::make_unique<SplatData>(vertexCount, u_buffer);
-	}
-
-	int vertexCount = 0;
-	std::vector<float> viewProj;
-	// 6*4 + 4 + 4 = 8*4
-	// XYZ - Position (Float32)
-	// XYZ - Scale (Float32)
-	// RGBA - colors (uint8)
-	// IJKL - quaternion/rot (uint8)
-
-	std::vector<float> lastProj;
-	int lastVertexCount = 0;
-
-	std::vector<unsigned int> texdata;
-	int texwidth;
-	int texheight;
-	std::vector<unsigned int> depthIndex;
-
-	glsplat gl;
-
-	unsigned int rendu = 1;
 
 	void generateTexture()
 	{
@@ -143,7 +123,7 @@ export struct splatdata {
 
 
 
-		gl.setTextureData(texdata, texwidth, texheight);
+		m_gl->setTextureData(texdata, texwidth, texheight);
 	}
 
 	void runSort(const std::vector<float>& viewProj)
@@ -199,7 +179,7 @@ export struct splatdata {
 
 		lastProj = viewProj;
 
-		gl.setDepthIndex(depthIndex);
+		m_gl->setDepthIndex(depthIndex);
 	}
 
 	void setView(const std::vector<float>& newviewProj)
@@ -207,11 +187,11 @@ export struct splatdata {
 		viewProj = newviewProj;
 		runSort(viewProj);
 
-		gl.viewChanged();
+		m_gl->viewChanged();
 	}
 
 
-	void initializeGL() { gl.initializeGL(); }
+	void initializeGL() { m_gl->initializeGL(); }
 
-	void resizeGL(int w, int h) { gl.resizeGL(w, h); }
+	void resizeGL(int w, int h) { m_gl->resizeGL(w, h); }
 };
