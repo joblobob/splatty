@@ -9,12 +9,16 @@ module;
 #include <ranges>
 #include <vector>
 
+#include <battery/embed.hpp>
+
 export module splat.data;
 
 constexpr unsigned int to_uints(float v)
 {
 	return std::bit_cast<unsigned int>(v);
 }
+
+//static inline const auto plushData = b::embed<"res/plush.splat">();
 
 export struct SplatData {
 	SplatData(int splatCount, const std::vector<unsigned char> splatBuffer) : m_ucharBuffer(splatBuffer)
