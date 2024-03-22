@@ -30,7 +30,7 @@ import splat.reader;
 // IJKL - quaternion/rot (uint8)
 constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 
-export struct splatdata {
+export struct Splatty {
 	std::unique_ptr<SplatData> m_data;
 	std::unique_ptr<glsplat> m_gl;
 
@@ -46,7 +46,7 @@ export struct splatdata {
 
 	unsigned int rendu = 1;
 
-	splatdata(const std::filesystem::path& path)
+	Splatty(const std::filesystem::path& path)
 	{
 		std::vector<unsigned char> data = Splat::readFromFile(path);
 
@@ -54,7 +54,7 @@ export struct splatdata {
 		vertexCount = (data.size() / rowLength);
 		depthIndex.resize(vertexCount + 1);
 
-		m_data = std::make_unique<SplatData>(vertexCount, data);
+		m_data = std::make_unique<SplatData>(data);
 		m_gl   = std::make_unique<glsplat>(vertexCount);
 	}
 

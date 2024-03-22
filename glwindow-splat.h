@@ -23,7 +23,7 @@ public:
 	std::vector<float> worldInteraction(std::vector<float>& viewMatrix);
 
 private:
-	splatdata m_splatty;
+	Splatty m_splatty;
 };
 
 #endif
