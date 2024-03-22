@@ -23,6 +23,7 @@ import splat.opengl;
 import splat.math;
 import splat.reader;
 
+// a splat is: 
 // 6*4 + 4 + 4 = 8*4
 // XYZ - Position (Float32)
 // XYZ - Scale (Float32)
@@ -35,12 +36,12 @@ export struct Splatty {
 	std::unique_ptr<glsplat> m_gl;
 
 	int vertexCount     = 0;
-	int lastVertexCount = 0;
+	int lastVertexCount = 0; // pas besoin vu que la lastview est tjrs vide la 1ere fois?
 	std::vector<float> viewProj;
 	std::vector<float> lastProj;
 
 	int texwidth;
-	int texheight;
+	constexpr int texheight = 2048;
 	std::vector<unsigned int> texdata;
 	std::vector<unsigned int> depthIndex;
 
@@ -50,20 +51,20 @@ export struct Splatty {
 	{
 		std::vector<unsigned char> data = Splat::readFromFile(path);
 
-		// set vertex count in our openGL helper
+		// resize data folowwing the vertexCount
 		vertexCount = (data.size() / rowLength);
+
 		depthIndex.resize(vertexCount + 1);
+
+		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
+		texdata.resize(texwidth * texheight * 4 + 1);  // 4 components per pixel (RGBA)
 
 		m_data = std::make_unique<SplatData>(data);
 		m_gl   = std::make_unique<glsplat>(vertexCount);
 	}
 
 	void generateTexture()
-	{
-		texwidth  = 2048;                                                  // Set to your desired width
-		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
-
+	{       
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
@@ -138,9 +139,8 @@ export struct Splatty {
 		lastVertexCount = vertexCount;
 		//}
 
-		//console.time("sort");
-		int maxDepth = INT_MIN;
-		int minDepth = INT_MAX;
+		int maxDepth = std::numeric_limits<int>::min();
+		int minDepth = std::numeric_limits<int>::max();
 		std::vector<unsigned int> sizeList(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
 			int depth = (viewProj[2] * m_data->m_floatBuffer[8 * i + 0] + viewProj[6] * m_data->m_floatBuffer[8 * i + 1] +
