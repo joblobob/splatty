@@ -7,17 +7,16 @@
 module;
 
 
+#include <array>
 #include <cmath>
-#include <limits>
 #include <print>
-#include <vector>
 
 #include <bit>
 #include <bitset>
 export module splat.math;
 
 
-export constexpr std::vector<float> getProjectionMatrix(float fx, float fy, int width, int height)
+export constexpr std::array<float, 16> getProjectionMatrix(float fx, float fy, int width, int height)
 {
 	constexpr float znear = 0.2f;
 	constexpr float zfar  = 200;
@@ -40,10 +39,9 @@ export constexpr std::vector<float> getProjectionMatrix(float fx, float fy, int 
 		0.f };
 }
 
-export constexpr std::vector<float> multiply4(const std::vector<float>& a, const std::vector<float>& b)
+export constexpr std::array<float, 16> multiply4(const std::array<float, 16>& a, const std::array<float, 16>& b)
 {
-	return {
-		b[0] * a[0] + b[1] * a[4] + b[2] * a[8] + b[3] * a[12],
+	return { b[0] * a[0] + b[1] * a[4] + b[2] * a[8] + b[3] * a[12],
 		b[0] * a[1] + b[1] * a[5] + b[2] * a[9] + b[3] * a[13],
 		b[0] * a[2] + b[1] * a[6] + b[2] * a[10] + b[3] * a[14],
 		b[0] * a[3] + b[1] * a[7] + b[2] * a[11] + b[3] * a[15],
@@ -58,11 +56,10 @@ export constexpr std::vector<float> multiply4(const std::vector<float>& a, const
 		b[12] * a[0] + b[13] * a[4] + b[14] * a[8] + b[15] * a[12],
 		b[12] * a[1] + b[13] * a[5] + b[14] * a[9] + b[15] * a[13],
 		b[12] * a[2] + b[13] * a[6] + b[14] * a[10] + b[15] * a[14],
-		b[12] * a[3] + b[13] * a[7] + b[14] * a[11] + b[15] * a[15],
-	};
+		b[12] * a[3] + b[13] * a[7] + b[14] * a[11] + b[15] * a[15] };
 }
 
-export constexpr std::vector<float> invert4(const std::vector<float>& a)
+export constexpr std::array<float, 16> invert4(const std::array<float, 16>& a)
 {
 	float b00 = a[0] * a[5] - a[1] * a[4];
 	float b01 = a[0] * a[6] - a[2] * a[4];
@@ -78,7 +75,7 @@ export constexpr std::vector<float> invert4(const std::vector<float>& a)
 	float b11 = a[10] * a[15] - a[11] * a[14];
 	float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 	if (det < 0.0000001)
-		return std::vector<float>(16);
+		return {};
 
 	return { (a[5] * b11 - a[6] * b10 + a[7] * b09) / det,
 		(a[2] * b10 - a[1] * b11 - a[3] * b09) / det,
@@ -98,7 +95,7 @@ export constexpr std::vector<float> invert4(const std::vector<float>& a)
 		(a[8] * b03 - a[9] * b01 + a[10] * b00) / det };
 }
 
-export std::vector<float> rotate4(const std::vector<float>& a, float rad, float x, float y, float z)
+export std::array<float, 16> rotate4(const std::array<float, 16>& a, float rad, float x, float y, float z)
 {
 	float len = std::hypot(x, y, z);
 	x /= len;
@@ -134,7 +131,7 @@ export std::vector<float> rotate4(const std::vector<float>& a, float rad, float 
 		a[15] };
 }
 
-export constexpr std::vector<float> translate4(const std::vector<float>& a, float x, float y, float z)
+export constexpr std::array<float, 16> translate4(const std::array<float, 16>& a, float x, float y, float z)
 {
 	return { a[0],
 		a[1],

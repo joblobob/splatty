@@ -16,14 +16,14 @@ class GLWindowSplat : public QOpenGLWindow
 public:
 	GLWindowSplat(const std::filesystem::path& splatFilePath) : m_splatty(splatFilePath) {}
 
-	void initializeGL() { m_splatty.initializeGL(); }
-	void resizeGL(int w, int h) { m_splatty.resizeGL(w, h); }
-	void paintGL();
-
-	std::vector<float> worldInteraction(std::vector<float>& viewMatrix);
+	std::array<float, 16> worldInteraction(std::array<float, 16>& viewMatrix);
 
 private:
 	Splatty m_splatty;
+
+	void initializeGL() { m_splatty.initializeGL(); }
+	void resizeGL(int w, int h) { m_splatty.resizeGL(w, h); }
+	void paintGL();
 };
 
 #endif

@@ -14,7 +14,7 @@ void GLWindowSplat::paintGL()
 	update();
 }
 
-std::vector<float> GLWindowSplat::worldInteraction(std::vector<float>& view)
+std::array<float, 16> GLWindowSplat::worldInteraction(std::array<float, 16>& view)
 {
 	auto inv = invert4(view);
 

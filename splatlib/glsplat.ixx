@@ -18,9 +18,9 @@ export module splat.opengl;
 import splat.math;
 import splat.shaders;
 
-static const std::vector<float> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
+static const std::array<float, 16> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 
-export std::vector<float> viewMatrix = defaultViewMatrix;
+export std::array<float, 16> viewMatrix = defaultViewMatrix;
 
 export constexpr int focalWidth  = 1500;
 export constexpr int focalHeight = 1500;
@@ -42,7 +42,7 @@ export struct glsplat {
 	QOpenGLBuffer m_indexBuffer;
 	QOpenGLBuffer m_vertexBuffer;
 
-	std::vector<float> m_projectionMatrix;
+	std::array<float, 16> m_projectionMatrix;
 
 	void viewChanged()
 	{
@@ -86,7 +86,7 @@ export struct glsplat {
 		m_viewLoc       = m_program.uniformLocation("view");
 
 		// positions
-		const std::vector<float> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
+		const std::array<float, 8> triangleVertices = { -2, -2, 2, -2, 2, 2, -2, 2 };
 
 		m_vertexBuffer.create();
 

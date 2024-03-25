@@ -7,6 +7,7 @@
 module;
 
 
+#include <array>
 #include <cmath>
 #include <limits>
 #include <mdspan>
@@ -23,7 +24,7 @@ import splat.opengl;
 import splat.math;
 import splat.reader;
 
-// a splat is: 
+// a splat is:
 // 6*4 + 4 + 4 = 8*4
 // XYZ - Position (Float32)
 // XYZ - Scale (Float32)
@@ -35,17 +36,16 @@ export struct Splatty {
 	std::unique_ptr<SplatData> m_data;
 	std::unique_ptr<glsplat> m_gl;
 
-	int vertexCount     = 0;
-	int lastVertexCount = 0; // pas besoin vu que la lastview est tjrs vide la 1ere fois?
-	std::vector<float> viewProj;
-	std::vector<float> lastProj;
+	int vertexCount = 0;
 
-	int texwidth;
-	constexpr int texheight = 2048;
+	std::array<float, 16> viewProj;
+	std::array<float, 16> lastProj;
+
+
+	static constexpr int texwidth = 2048;
+	int texheight;
 	std::vector<unsigned int> texdata;
 	std::vector<unsigned int> depthIndex;
-
-	unsigned int rendu = 1;
 
 	Splatty(const std::filesystem::path& path)
 	{
@@ -57,29 +57,24 @@ export struct Splatty {
 		depthIndex.resize(vertexCount + 1);
 
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-		texdata.resize(texwidth * texheight * 4 + 1);  // 4 components per pixel (RGBA)
+		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
 
 		m_data = std::make_unique<SplatData>(data);
 		m_gl   = std::make_unique<glsplat>(vertexCount);
 	}
 
 	void generateTexture()
-	{       
+	{
 		// Here we convert from a .splat file buffer into a texture
 		// With a little bit more foresight perhaps this texture file
 		// should have been the native format as it'd be very easy to
 		// load it into webgl.
 
-		if (rendu >= m_data->m_floatBuffer.size())
-			rendu = m_data->m_floatBuffer.size();
-		else
-			rendu += 4096;
-
 		std::array<float, 4> rot;
 		std::array<float, 9> M;
 		std::array<float, 6> sigma;
 
-		for (unsigned int i : std::views::iota(0u, rendu) | std::views::stride(8)) {
+		for (unsigned int i : std::views::iota(0u, m_data->m_floatBuffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
 			//texdata[i]     = uintBuffer[i];
 			//texdata[i + 1] = uintBuffer[i + 1];
@@ -127,17 +122,14 @@ export struct Splatty {
 		m_gl->setTextureData(texdata, texwidth, texheight);
 	}
 
-	void runSort(const std::vector<float>& viewProj)
+	void runSort(const std::array<float, 16>& viewProj)
 	{
-		//if (lastVertexCount == vertexCount) {
-		//	float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
-		//	if (std::abs(dot - 1) < 0.01) {
-		//		return;
-		//	}
-		//} else {
+		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+		if (std::abs(dot - 1) < 0.01) {
+			return;
+		}
+
 		generateTexture();
-		lastVertexCount = vertexCount;
-		//}
 
 		int maxDepth = std::numeric_limits<int>::min();
 		int minDepth = std::numeric_limits<int>::max();
@@ -182,7 +174,7 @@ export struct Splatty {
 		m_gl->setDepthIndex(depthIndex);
 	}
 
-	void setView(const std::vector<float>& newviewProj)
+	void setView(const std::array<float, 16>& newviewProj)
 	{
 		viewProj = newviewProj;
 		runSort(viewProj);
