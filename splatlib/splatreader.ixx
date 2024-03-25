@@ -15,9 +15,6 @@ export module splat.reader;
 
 export namespace Splat {
 
-// unsigned char filestream
-//using ucfstream = std::basic_ifstream<unsigned char, std::char_traits<unsigned char> >;
-
 std::vector<unsigned char> readFromFile(const std::filesystem::path& path)
 {
 	// file buffer
