@@ -9,6 +9,7 @@ module;
 
 #include <array>
 #include <cmath>
+#include <mdspan>
 #include <print>
 
 #include <bit>
@@ -131,24 +132,21 @@ export std::array<float, 16> rotate4(const std::array<float, 16>& a, float rad, 
 		a[15] };
 }
 
-export constexpr std::array<float, 16> translate4(const std::array<float, 16>& a, float x, float y, float z)
+
+export constexpr std::mdspan<float, std::extents<std::size_t, 4, 4> > translate4(std::mdspan<float, std::extents<std::size_t, 4, 4> >& a,
+    float x,
+    float y,
+    float z)
 {
-	return { a[0],
-		a[1],
-		a[2],
-		a[3],
-		a[4],
-		a[5],
-		a[6],
-		a[7],
-		a[8],
-		a[9],
-		a[10],
-		a[11],
-		a[0] * x + a[4] * y + a[8] * z + a[12],
-		a[1] * x + a[5] * y + a[9] * z + a[13],
-		a[2] * x + a[6] * y + a[10] * z + a[14],
-		a[3] * x + a[7] * y + a[11] * z + a[15] };
+	a[std::array { 3, 0 }] = a[std::array { 0, 0 }] * x + a[std::array { 1, 0 }] * y + a[std::array { 2, 0 }] * z + a[std::array { 3, 0 }];
+	a[std::array { 3, 1 }] = a[std::array { 0, 1 }] * x + a[std::array { 1, 1 }] * y + a[std::array { 2, 1 }] * z + a[std::array { 3, 1 }];
+	a[std::array { 3, 2 }] = a[std::array { 0, 2 }] * x + a[std::array { 1, 2 }] * y + a[std::array { 2, 2 }] * z + a[std::array { 3, 2 }];
+	a[std::array { 3, 3 }] = a[std::array { 0, 3 }] * x + a[std::array { 1, 3 }] * y + a[std::array { 2, 3 }] * z + a[std::array { 3, 3 }];
+	//a[12]    = a[0] * x + a[4] * y + a[8] * z + a[12];
+	//a[13]    = a[1] * x + a[5] * y + a[9] * z + a[13];
+	//a[14]    = a[2] * x + a[6] * y + a[10] * z + a[14];
+	//a[15]    = a[3] * x + a[7] * y + a[11] * z + a[15];
+	return a;
 }
 
 export int floatToHalf(float val)
