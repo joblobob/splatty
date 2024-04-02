@@ -133,20 +133,12 @@ export std::array<float, 16> rotate4(const std::array<float, 16>& a, float rad, 
 }
 
 
-export constexpr std::mdspan<float, std::extents<std::size_t, 4, 4> > translate4(std::mdspan<float, std::extents<std::size_t, 4, 4> >& a,
-    float x,
-    float y,
-    float z)
+export constexpr void translateMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix, float x, float y, float z)
 {
-	a[std::array { 3, 0 }] = a[std::array { 0, 0 }] * x + a[std::array { 1, 0 }] * y + a[std::array { 2, 0 }] * z + a[std::array { 3, 0 }];
-	a[std::array { 3, 1 }] = a[std::array { 0, 1 }] * x + a[std::array { 1, 1 }] * y + a[std::array { 2, 1 }] * z + a[std::array { 3, 1 }];
-	a[std::array { 3, 2 }] = a[std::array { 0, 2 }] * x + a[std::array { 1, 2 }] * y + a[std::array { 2, 2 }] * z + a[std::array { 3, 2 }];
-	a[std::array { 3, 3 }] = a[std::array { 0, 3 }] * x + a[std::array { 1, 3 }] * y + a[std::array { 2, 3 }] * z + a[std::array { 3, 3 }];
-	//a[12]    = a[0] * x + a[4] * y + a[8] * z + a[12];
-	//a[13]    = a[1] * x + a[5] * y + a[9] * z + a[13];
-	//a[14]    = a[2] * x + a[6] * y + a[10] * z + a[14];
-	//a[15]    = a[3] * x + a[7] * y + a[11] * z + a[15];
-	return a;
+	matrix[std::array { 3, 0 }] += matrix[std::array { 0, 0 }] * x + matrix[std::array { 1, 0 }] * y + matrix[std::array { 2, 0 }] * z;
+	matrix[std::array { 3, 1 }] += matrix[std::array { 0, 1 }] * x + matrix[std::array { 1, 1 }] * y + matrix[std::array { 2, 1 }] * z;
+	matrix[std::array { 3, 2 }] += matrix[std::array { 0, 2 }] * x + matrix[std::array { 1, 2 }] * y + matrix[std::array { 2, 2 }] * z;
+	matrix[std::array { 3, 3 }] += matrix[std::array { 0, 3 }] * x + matrix[std::array { 1, 3 }] * y + matrix[std::array { 2, 3 }] * z;
 }
 
 export int floatToHalf(float val)
