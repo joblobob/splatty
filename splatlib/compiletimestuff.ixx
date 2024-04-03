@@ -96,7 +96,7 @@ export constexpr std::array<float, 16> invert4(const std::array<float, 16>& a)
 		(a[8] * b03 - a[9] * b01 + a[10] * b00) / det };
 }
 
-export std::array<float, 16> rotate4(const std::array<float, 16>& a, float rad, float x, float y, float z)
+export void rotateMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix, float rad, float x, float y, float z)
 {
 	float len = std::hypot(x, y, z);
 	x /= len;
@@ -114,22 +114,21 @@ export std::array<float, 16> rotate4(const std::array<float, 16>& a, float rad, 
 	float b20 = x * z * t + y * s;
 	float b21 = y * z * t - x * s;
 	float b22 = z * z * t + c;
-	return { a[0] * b00 + a[4] * b01 + a[8] * b02,
-		a[1] * b00 + a[5] * b01 + a[9] * b02,
-		a[2] * b00 + a[6] * b01 + a[10] * b02,
-		a[3] * b00 + a[7] * b01 + a[11] * b02,
-		a[0] * b10 + a[4] * b11 + a[8] * b12,
-		a[1] * b10 + a[5] * b11 + a[9] * b12,
-		a[2] * b10 + a[6] * b11 + a[10] * b12,
-		a[3] * b10 + a[7] * b11 + a[11] * b12,
-		a[0] * b20 + a[4] * b21 + a[8] * b22,
-		a[1] * b20 + a[5] * b21 + a[9] * b22,
-		a[2] * b20 + a[6] * b21 + a[10] * b22,
-		a[3] * b20 + a[7] * b21 + a[11] * b22,
-		a[12],
-		a[13],
-		a[14],
-		a[15] };
+
+	matrix[std::array { 0, 0 }] = matrix[std::array { 0, 0 }] * b00 + matrix[std::array { 1, 0 }] * b01 + matrix[std::array { 2, 0 }] * b02;
+	matrix[std::array { 0, 1 }] = matrix[std::array { 0, 1 }] * b00 + matrix[std::array { 1, 1 }] * b01 + matrix[std::array { 2, 1 }] * b02;
+	matrix[std::array { 0, 2 }] = matrix[std::array { 0, 2 }] * b00 + matrix[std::array { 1, 2 }] * b01 + matrix[std::array { 2, 2 }] * b02;
+	matrix[std::array { 0, 3 }] = matrix[std::array { 0, 3 }] * b00 + matrix[std::array { 1, 3 }] * b01 + matrix[std::array { 2, 3 }] * b02;
+
+	matrix[std::array { 1, 0 }] = matrix[std::array { 0, 0 }] * b10 + matrix[std::array { 1, 0 }] * b11 + matrix[std::array { 2, 0 }] * b12;
+	matrix[std::array { 1, 1 }] = matrix[std::array { 0, 1 }] * b10 + matrix[std::array { 1, 1 }] * b11 + matrix[std::array { 2, 1 }] * b12;
+	matrix[std::array { 1, 2 }] = matrix[std::array { 0, 2 }] * b10 + matrix[std::array { 1, 2 }] * b11 + matrix[std::array { 2, 2 }] * b12;
+	matrix[std::array { 1, 3 }] = matrix[std::array { 0, 3 }] * b10 + matrix[std::array { 1, 3 }] * b11 + matrix[std::array { 2, 3 }] * b12;
+
+	matrix[std::array { 2, 0 }] = matrix[std::array { 0, 0 }] * b20 + matrix[std::array { 1, 0 }] * b21 + matrix[std::array { 2, 0 }] * b22;
+	matrix[std::array { 2, 1 }] = matrix[std::array { 0, 1 }] * b20 + matrix[std::array { 1, 1 }] * b21 + matrix[std::array { 2, 1 }] * b22;
+	matrix[std::array { 2, 2 }] = matrix[std::array { 0, 2 }] * b20 + matrix[std::array { 1, 2 }] * b21 + matrix[std::array { 2, 2 }] * b22;
+	matrix[std::array { 2, 3 }] = matrix[std::array { 0, 3 }] * b20 + matrix[std::array { 1, 3 }] * b21 + matrix[std::array { 2, 3 }] * b22;
 }
 
 
