@@ -25,7 +25,5 @@ std::array<float, 16> GLWindowSplat::worldInteraction(std::array<float, 16>& vie
 
 	invertMatrix(md);
 
-	auto viewProj = multiply4(m_splatty.m_gl->m_projectionMatrix, view);
-
-	return viewProj;
+	return view;
 }
