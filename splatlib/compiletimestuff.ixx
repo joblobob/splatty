@@ -60,40 +60,48 @@ export constexpr std::array<float, 16> multiply4(const std::array<float, 16>& a,
 		b[12] * a[3] + b[13] * a[7] + b[14] * a[11] + b[15] * a[15] };
 }
 
-export constexpr std::array<float, 16> invert4(const std::array<float, 16>& a)
+export constexpr void invertMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix)
 {
-	float b00 = a[0] * a[5] - a[1] * a[4];
-	float b01 = a[0] * a[6] - a[2] * a[4];
-	float b02 = a[0] * a[7] - a[3] * a[4];
-	float b03 = a[1] * a[6] - a[2] * a[5];
-	float b04 = a[1] * a[7] - a[3] * a[5];
-	float b05 = a[2] * a[7] - a[3] * a[6];
-	float b06 = a[8] * a[13] - a[9] * a[12];
-	float b07 = a[8] * a[14] - a[10] * a[12];
-	float b08 = a[8] * a[15] - a[11] * a[12];
-	float b09 = a[9] * a[14] - a[10] * a[13];
-	float b10 = a[9] * a[15] - a[11] * a[13];
-	float b11 = a[10] * a[15] - a[11] * a[14];
-	float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-	if (det < 0.0000001)
-		return {};
+	float b00 = matrix[std::array { 0, 0 }] * matrix[std::array { 1, 1 }] - matrix[std::array { 0, 1 }] * matrix[std::array { 1, 0 }];
+	float b01 = matrix[std::array { 0, 0 }] * matrix[std::array { 1, 2 }] - matrix[std::array { 0, 2 }] * matrix[std::array { 1, 0 }];
+	float b02 = matrix[std::array { 0, 0 }] * matrix[std::array { 1, 3 }] - matrix[std::array { 0, 3 }] * matrix[std::array { 1, 0 }];
+	float b03 = matrix[std::array { 0, 1 }] * matrix[std::array { 1, 2 }] - matrix[std::array { 0, 2 }] * matrix[std::array { 1, 1 }];
 
-	return { (a[5] * b11 - a[6] * b10 + a[7] * b09) / det,
-		(a[2] * b10 - a[1] * b11 - a[3] * b09) / det,
-		(a[13] * b05 - a[14] * b04 + a[15] * b03) / det,
-		(a[10] * b04 - a[9] * b05 - a[11] * b03) / det,
-		(a[6] * b08 - a[4] * b11 - a[7] * b07) / det,
-		(a[0] * b11 - a[2] * b08 + a[3] * b07) / det,
-		(a[14] * b02 - a[12] * b05 - a[15] * b01) / det,
-		(a[8] * b05 - a[10] * b02 + a[11] * b01) / det,
-		(a[4] * b10 - a[5] * b08 + a[7] * b06) / det,
-		(a[1] * b08 - a[0] * b10 - a[3] * b06) / det,
-		(a[12] * b04 - a[13] * b02 + a[15] * b00) / det,
-		(a[9] * b02 - a[8] * b04 - a[11] * b00) / det,
-		(a[5] * b07 - a[4] * b09 - a[6] * b06) / det,
-		(a[0] * b09 - a[1] * b07 + a[2] * b06) / det,
-		(a[13] * b01 - a[12] * b03 - a[14] * b00) / det,
-		(a[8] * b03 - a[9] * b01 + a[10] * b00) / det };
+	float b04 = matrix[std::array { 0, 1 }] * matrix[std::array { 1, 3 }] - matrix[std::array { 0, 3 }] * matrix[std::array { 1, 1 }];
+	float b05 = matrix[std::array { 0, 2 }] * matrix[std::array { 1, 3 }] - matrix[std::array { 0, 3 }] * matrix[std::array { 1, 2 }];
+	float b06 = matrix[std::array { 2, 0 }] * matrix[std::array { 3, 1 }] - matrix[std::array { 2, 1 }] * matrix[std::array { 3, 0 }];
+	float b07 = matrix[std::array { 2, 0 }] * matrix[std::array { 3, 2 }] - matrix[std::array { 2, 2 }] * matrix[std::array { 3, 0 }];
+
+	float b08 = matrix[std::array { 2, 0 }] * matrix[std::array { 3, 3 }] - matrix[std::array { 2, 3 }] * matrix[std::array { 3, 0 }];
+	float b09 = matrix[std::array { 2, 1 }] * matrix[std::array { 3, 2 }] - matrix[std::array { 2, 2 }] * matrix[std::array { 3, 1 }];
+	float b10 = matrix[std::array { 2, 1 }] * matrix[std::array { 3, 3 }] - matrix[std::array { 2, 3 }] * matrix[std::array { 3, 1 }];
+	float b11 = matrix[std::array { 2, 2 }] * matrix[std::array { 3, 3 }] - matrix[std::array { 2, 3 }] * matrix[std::array { 3, 2 }];
+	float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+	if (det < 0.0000001) {
+		return;
+	}
+
+	std::array<float, 16> arr { (matrix[std::array { 1, 1 }] * b11 - matrix[std::array { 1, 2 }] * b10 + matrix[std::array { 1, 3 }] * b09) / det,
+		(matrix[std::array { 0, 2 }] * b10 - matrix[std::array { 0, 1 }] * b11 - matrix[std::array { 0, 3 }] * b09) / det,
+		(matrix[std::array { 3, 1 }] * b05 - matrix[std::array { 3, 2 }] * b04 + matrix[std::array { 3, 3 }] * b03) / det,
+		(matrix[std::array { 2, 2 }] * b04 - matrix[std::array { 2, 1 }] * b05 - matrix[std::array { 2, 3 }] * b03) / det,
+
+		(matrix[std::array { 1, 2 }] * b08 - matrix[std::array { 1, 0 }] * b11 - matrix[std::array { 1, 3 }] * b07) / det,
+		(matrix[std::array { 0, 0 }] * b11 - matrix[std::array { 0, 2 }] * b08 + matrix[std::array { 0, 3 }] * b07) / det,
+		(matrix[std::array { 3, 2 }] * b02 - matrix[std::array { 3, 0 }] * b05 - matrix[std::array { 3, 3 }] * b01) / det,
+		(matrix[std::array { 2, 0 }] * b05 - matrix[std::array { 2, 2 }] * b02 + matrix[std::array { 2, 3 }] * b01) / det,
+
+		(matrix[std::array { 1, 0 }] * b10 - matrix[std::array { 1, 1 }] * b08 + matrix[std::array { 1, 3 }] * b06) / det,
+		(matrix[std::array { 0, 1 }] * b08 - matrix[std::array { 0, 0 }] * b10 - matrix[std::array { 0, 3 }] * b06) / det,
+		(matrix[std::array { 3, 0 }] * b04 - matrix[std::array { 3, 1 }] * b02 + matrix[std::array { 3, 3 }] * b00) / det,
+		(matrix[std::array { 2, 1 }] * b02 - matrix[std::array { 2, 0 }] * b04 - matrix[std::array { 2, 3 }] * b00) / det,
+
+		(matrix[std::array { 1, 1 }] * b07 - matrix[std::array { 1, 0 }] * b09 - matrix[std::array { 1, 2 }] * b06) / det,
+		(matrix[std::array { 0, 0 }] * b09 - matrix[std::array { 0, 1 }] * b07 + matrix[std::array { 0, 2 }] * b06) / det,
+		(matrix[std::array { 3, 1 }] * b01 - matrix[std::array { 3, 0 }] * b03 - matrix[std::array { 3, 2 }] * b00) / det,
+		(matrix[std::array { 2, 0 }] * b03 - matrix[std::array { 2, 1 }] * b01 + matrix[std::array { 2, 2 }] * b00) / det };
+
+	std::memcpy(matrix.data_handle(), arr.data(), sizeof(float) * 16);
 }
 
 export void rotateMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix, float rad, float x, float y, float z)

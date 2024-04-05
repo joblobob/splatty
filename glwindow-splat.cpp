@@ -16,14 +16,14 @@ void GLWindowSplat::paintGL()
 
 std::array<float, 16> GLWindowSplat::worldInteraction(std::array<float, 16>& view)
 {
-	std::array<float, 16> inv = invert4(view);
+	auto md = std::mdspan<float, std::extents<std::size_t, 4, 4> >(view.data(), 4, 4);
 
-	auto md = std::mdspan<float, std::extents<std::size_t, 4, 4> >(inv.data(), 4, 4);
+	invertMatrix(md);
 
 	rotateMatrix(md, std::sin(16.0f / 2000.5f), 1, -1, 1);
 	translateMatrix(md, 0.05, 0.05, -0.5);
 
-	view = invert4(inv);
+	invertMatrix(md);
 
 	auto viewProj = multiply4(m_splatty.m_gl->m_projectionMatrix, view);
 
