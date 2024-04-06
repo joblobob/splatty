@@ -74,6 +74,8 @@ export struct Splatty {
 		std::array<float, 9> M;
 		std::array<float, 6> sigma;
 
+		auto spanny = std::mdspan(m_data->m_ucharBuffer.data(), 32, m_data->m_floatBuffer.size());
+
 		for (unsigned int i : std::views::iota(0u, m_data->m_floatBuffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
 			//texdata[i]     = uintBuffer[i];
@@ -122,22 +124,13 @@ export struct Splatty {
 		m_gl->setTextureData(texdata, texwidth, texheight);
 	}
 
-	void runSort(const std::array<float, 16>& viewProj)
+	void sortByDepth(float x, float y, float z)
 	{
-		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
-		if (std::abs(dot - 1) < 0.01) {
-			return;
-		}
-
-		generateTexture();
-
 		int maxDepth = std::numeric_limits<int>::min();
 		int minDepth = std::numeric_limits<int>::max();
 		std::vector<unsigned int> sizeList(vertexCount);
 		for (int i = 0; i < vertexCount; i++) {
-			int depth = (viewProj[2] * m_data->m_floatBuffer[8 * i + 0] + viewProj[6] * m_data->m_floatBuffer[8 * i + 1] +
-			                viewProj[10] * m_data->m_floatBuffer[8 * i + 2]) *
-			            4096;
+			int depth   = (x * m_data->m_floatBuffer[8 * i + 0] + y * m_data->m_floatBuffer[8 * i + 1] + z * m_data->m_floatBuffer[8 * i + 2]) * 4096;
 			sizeList[i] = depth;
 
 			if (depth > maxDepth)
@@ -167,11 +160,23 @@ export struct Splatty {
 			depthIndex[starts0[sizeList[i]]++] = i;
 		}
 
-		//console.timeEnd("sort");
-
-		lastProj = viewProj;
 
 		m_gl->setDepthIndex(depthIndex);
+	}
+	bool once = false;
+	void runSort(const std::array<float, 16>& viewProj)
+	{
+		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+		if (std::abs(dot - 1) < 0.01) {
+			return;
+		}
+
+		if (!once)
+			generateTexture();
+		once = true;
+		sortByDepth(viewProj[2], viewProj[6], viewProj[10]);
+
+		lastProj = viewProj;
 	}
 
 	void setView(const std::array<float, 16>& newviewProj)
