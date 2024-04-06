@@ -145,12 +145,12 @@ export struct Splatty {
 		std::vector<int> counts0(sizeSort);
 
 		//normalize depth
-
 		sizeList | std::views::transform([&](unsigned int& val) {
 			val = std::floor((val - minDepth) * depthInv);
 			counts0[val]++; //count occurrences
 			return val;
 		}) | std::ranges::to<std::vector>();
+
 
 		std::vector<int> starts0(sizeSort);
 		for (int i = 1; i < sizeSort; i++)
@@ -163,7 +163,7 @@ export struct Splatty {
 
 		m_gl->setDepthIndex(depthIndex);
 	}
-	bool once = false;
+
 	void runSort(const std::array<float, 16>& viewProj)
 	{
 		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
@@ -171,9 +171,8 @@ export struct Splatty {
 			return;
 		}
 
-		if (!once)
-			generateTexture();
-		once = true;
+		generateTexture();
+
 		sortByDepth(viewProj[2], viewProj[6], viewProj[10]);
 
 		lastProj = viewProj;
