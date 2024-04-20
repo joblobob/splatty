@@ -11,10 +11,7 @@ module;
 
 export module splat.data;
 
-constexpr unsigned int to_uints(float v)
-{
-	return std::bit_cast<unsigned int>(v);
-}
+import splat.math;
 
 // 6*4 + 4 + 4 = 8*4
 // XYZ - Position (Float32)

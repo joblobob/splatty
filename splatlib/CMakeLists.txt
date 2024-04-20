@@ -21,12 +21,12 @@ add_library(splatlib)
 target_sources(splatlib
   PUBLIC
     FILE_SET my_modules TYPE CXX_MODULES FILES 
-        compiletimestuff.ixx
-        glsplat.ixx
+        splatmath.ixx
+        splatopengl.ixx
         splatdata.ixx
         splatreader.ixx
+        splatshaders.ixx
         splatty.ixx
-        shaders.ixx
 )
 
 
