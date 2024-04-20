@@ -4,7 +4,6 @@
 
 #include "glwindow-splat.h"
 
-
 void GLWindowSplat::paintGL()
 {
 	// set the view to the new coordinates
@@ -20,7 +19,7 @@ std::array<float, 16> GLWindowSplat::worldInteraction(std::array<float, 16>& vie
 
 	invertMatrix(md);
 
-	rotateMatrix(md, std::sin(16.0f / 2000.5f), 1, -1, 1);
+	rotateMatrix(md, 0.01f, 0.0f, -0.2f, 0.0f);
 	translateMatrix(md, 0.05, 0.05, -0.5);
 
 	invertMatrix(md);

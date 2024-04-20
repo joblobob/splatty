@@ -163,26 +163,21 @@ export struct Splatty {
 
 		m_gl->setDepthIndex(depthIndex);
 	}
-	bool once = false;
-	void runSort(const std::array<float, 16>& viewProj)
-	{
-		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
-		if (std::abs(dot - 1) < 0.01) {
-			return;
-		}
-
-		if (!once)
-			generateTexture();
-		once = true;
-		sortByDepth(viewProj[2], viewProj[6], viewProj[10]);
-
-		lastProj = viewProj;
-	}
 
 	void setView(const std::array<float, 16>& newviewProj)
 	{
 		viewProj = newviewProj;
-		runSort(viewProj);
+
+
+		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+		if (std::abs(dot - 1) > 0.01) {
+			generateTexture();
+
+			sortByDepth(viewProj[2], viewProj[6], viewProj[10]);
+
+			lastProj = viewProj;
+		}
+
 
 		m_gl->viewChanged();
 	}
