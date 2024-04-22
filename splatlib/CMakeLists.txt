@@ -21,6 +21,7 @@ add_library(splatlib)
 target_sources(splatlib
   PUBLIC
     FILE_SET my_modules TYPE CXX_MODULES FILES 
+        splatcoroutine.ixx
         splatmath.ixx
         splatopengl.ixx
         splatdata.ixx

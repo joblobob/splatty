@@ -17,8 +17,11 @@ module;
 
 #include <filesystem>
 
+#include <QDebug>
+
 export module splatty;
 
+import splat.coroutine;
 import splat.data;
 import splat.opengl;
 import splat.math;
@@ -46,7 +49,7 @@ export struct Splatty {
 	int texheight;
 	std::vector<unsigned int> texdata;
 	std::vector<unsigned int> depthIndex;
-
+	Chat chat = Fun(); // #E Creation of the coroutine
 	Splatty(const std::filesystem::path& path)
 	{
 		std::vector<unsigned char> data = Splat::readFromFile(path);
@@ -168,9 +171,11 @@ export struct Splatty {
 	{
 		viewProj = newviewProj;
 
+		chat.answer("Where are you?\n"); // #G Send data into the coroutine
 
 		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
 		if (std::abs(dot - 1) > 0.01) {
+			qCritical() << chat.listen(); // #H Wait for more data from the coroutine "here"
 			generateTexture();
 
 			sortByDepth(viewProj[2], viewProj[6], viewProj[10]);
