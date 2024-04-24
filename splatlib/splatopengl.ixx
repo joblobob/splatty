@@ -13,14 +13,16 @@ module;
 #include <QOpenGLTexture>
 #include <QOpenGLVertexArrayObject>
 
+#include <mdspan>
+
 export module splat.opengl;
 
 import splat.math;
 import splat.shaders;
 
-static const std::array<float, 16> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
+static std::array<float, 16> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 
-export std::array<float, 16> viewMatrix = defaultViewMatrix;
+export std::mdspan<float, std::extents<std::size_t, 4, 4> > viewMatrix(defaultViewMatrix.data(), 4, 4);
 
 export constexpr int focalWidth  = 1500;
 export constexpr int focalHeight = 1500;
@@ -49,7 +51,7 @@ export struct glsplat {
 		QOpenGLExtraFunctions* f = QOpenGLContext::currentContext()->extraFunctions();
 
 		// fps calculations (from paintGL)
-		f->glUniformMatrix4fv(m_viewLoc, 1, false, viewMatrix.data());
+		f->glUniformMatrix4fv(m_viewLoc, 1, false, viewMatrix.data_handle());
 		f->glClear(GL_COLOR_BUFFER_BIT);
 		QOpenGLContext::currentContext()->extraFunctions()->glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, vertexCount);
 	}

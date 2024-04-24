@@ -6,6 +6,7 @@
 #define GLWIDGETSPLAT_H
 
 #include <QOpenGLWindow>
+#include <mdspan>
 
 import splatty;
 
@@ -16,7 +17,7 @@ class GLWindowSplat : public QOpenGLWindow
 public:
 	GLWindowSplat(const std::filesystem::path& splatFilePath) : m_splatty(splatFilePath) {}
 
-	std::array<float, 16> worldInteraction(std::array<float, 16>& viewMatrix);
+	void worldInteraction(std::mdspan<float, std::extents<std::size_t, 4, 4> > view);
 
 private:
 	Splatty m_splatty;

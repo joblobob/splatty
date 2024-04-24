@@ -7,22 +7,19 @@
 void GLWindowSplat::paintGL()
 {
 	// set the view to the new coordinates
-	m_splatty.setView(worldInteraction(viewMatrix));
+	worldInteraction(viewMatrix);
+	m_splatty.setView(viewMatrix[std::array { 0, 2 }], viewMatrix[std::array { 1, 2 }], viewMatrix[std::array { 2, 2 }]);
 
 	//update canvas when we need to ^_^
 	update();
 }
 
-std::array<float, 16> GLWindowSplat::worldInteraction(std::array<float, 16>& view)
+void GLWindowSplat::worldInteraction(std::mdspan<float, std::extents<std::size_t, 4, 4> > view)
 {
-	auto md = std::mdspan<float, std::extents<std::size_t, 4, 4> >(view.data(), 4, 4);
+	invertMatrix(view);
 
-	invertMatrix(md);
+	rotateMatrix(view, 0.01f, 0.0f, -0.2f, 0.0f);
+	translateMatrix(view, 0.05, 0.05, -0.5);
 
-	rotateMatrix(md, 0.01f, 0.0f, -0.2f, 0.0f);
-	translateMatrix(md, 0.05, 0.05, -0.5);
-
-	invertMatrix(md);
-
-	return view;
+	invertMatrix(view);
 }

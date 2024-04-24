@@ -41,8 +41,7 @@ export struct Splatty {
 
 	int vertexCount = 0;
 
-	std::array<float, 16> viewProj;
-	std::array<float, 16> lastProj;
+	float lastProjX, lastProjY, lastProjZ;
 
 
 	static constexpr int texwidth = 2048;
@@ -167,20 +166,20 @@ export struct Splatty {
 		m_gl->setDepthIndex(depthIndex);
 	}
 
-	void setView(const std::array<float, 16>& newviewProj)
+	void setView(float x, float y, float z)
 	{
-		viewProj = newviewProj;
-
 		chat.answer("Where are you?\n"); // #G Send data into the coroutine
 
-		float dot = lastProj[2] * viewProj[2] + lastProj[6] * viewProj[6] + lastProj[10] * viewProj[10];
+		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 		if (std::abs(dot - 1) > 0.01) {
 			qCritical() << chat.listen(); // #H Wait for more data from the coroutine "here"
 			generateTexture();
 
-			sortByDepth(viewProj[2], viewProj[6], viewProj[10]);
+			sortByDepth(x, y, z);
 
-			lastProj = viewProj;
+			lastProjX = x;
+			lastProjY = y;
+			lastProjZ = z;
 		}
 
 

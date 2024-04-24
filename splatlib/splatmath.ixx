@@ -17,7 +17,7 @@ module;
 export module splat.math;
 
 
-export constexpr std::array<float, 16> getProjectionMatrix(float fx, float fy, int width, int height)
+export std::array<float, 16> getProjectionMatrix(float fx, float fy, int width, int height)
 {
 	constexpr float znear = 0.2f;
 	constexpr float zfar  = 200;
@@ -40,7 +40,7 @@ export constexpr std::array<float, 16> getProjectionMatrix(float fx, float fy, i
 		0.f };
 }
 
-export constexpr void invertMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix)
+export void invertMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix)
 {
 	float b00 = matrix[std::array { 0, 0 }] * matrix[std::array { 1, 1 }] - matrix[std::array { 0, 1 }] * matrix[std::array { 1, 0 }];
 	float b01 = matrix[std::array { 0, 0 }] * matrix[std::array { 1, 2 }] - matrix[std::array { 0, 2 }] * matrix[std::array { 1, 0 }];
@@ -120,7 +120,7 @@ export void rotateMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > ma
 }
 
 
-export constexpr void translateMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix, float x, float y, float z)
+export void translateMatrix(std::mdspan<float, std::extents<std::size_t, 4, 4> > matrix, float x, float y, float z)
 {
 	matrix[std::array { 3, 0 }] += matrix[std::array { 0, 0 }] * x + matrix[std::array { 1, 0 }] * y + matrix[std::array { 2, 0 }] * z;
 	matrix[std::array { 3, 1 }] += matrix[std::array { 0, 1 }] * x + matrix[std::array { 1, 1 }] * y + matrix[std::array { 2, 1 }] * z;
