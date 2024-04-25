@@ -23,14 +23,16 @@ export struct Chat {
 	struct promise_type {
 		std::string _msgOut {}, _msgIn {}; // #A Storing a value from or for the coroutine
 
-		void unhandled_exception() noexcept {}                        // #B What to do in case of an exception
-		Chat get_return_object() { return Chat { this }; }            // #C Coroutine creation
-		std::suspend_always initial_suspend() noexcept { return {}; } // #D Startup
-		std::suspend_always yield_value(std::string msg) noexcept     // #F Value from co_yield
+		Chat get_return_object() noexcept { return Chat { this }; }
+		std::suspend_never initial_suspend() noexcept { return {}; }
+		std::suspend_never final_suspend() noexcept { return {}; }
+		std::suspend_always yield_value(std::string msg) noexcept // #F Value from co_yield
 		{
 			_msgOut = std::move(msg);
 			return {};
 		}
+		void return_void() noexcept {}
+		void unhandled_exception() noexcept {}
 
 		auto await_transform(std::string) noexcept // #G Value from co_await
 		{
@@ -43,16 +45,12 @@ export struct Chat {
 
 			return awaiter { *this };
 		}
-
-		void return_value(std::string msg) noexcept { _msgOut = std::move(msg); } // #I Value from co_return
-		std::suspend_always final_suspend() noexcept { return {}; }               // #E Ending
 	};
 
-	using Handle = std::coroutine_handle<promise_type>; // #A Shortcut for the handle type
-	Handle mCoroHdl {};                                 // #B
+	std::coroutine_handle<promise_type> mCoroHdl {}; // #B
 
-	explicit Chat(promise_type* p) : mCoroHdl { Handle::from_promise(*p) } {}        // #C Get the handle form the promise
-	Chat(Chat&& rhs) noexcept : mCoroHdl { std::exchange(rhs.mCoroHdl, nullptr) } {} // #D Move only!
+	explicit Chat(promise_type* p) : mCoroHdl { std::coroutine_handle<promise_type>::from_promise(*p) } {} // #C Get the handle form the promise
+	Chat(Chat&& rhs) noexcept : mCoroHdl { std::exchange(rhs.mCoroHdl, nullptr) } {}                       // #D Move only!
 
 	~Chat() noexcept // #E Care taking, destroying the handle if needed
 	{
@@ -78,15 +76,16 @@ export struct Chat {
 	}
 };
 
+
+
 export Chat Fun() // #A Wrapper type Chat containing the promise type
 {
 	co_yield "Hello!\n"; // #B Calls promise_type.yield_value
 
 	int i = 0;
-
 	while (i < 50) {
-		std::cout << i++ << "\n" << co_await std::string {}; // #C Calls promise_type.await_transform
+		std::cout << i++ << " -- " << co_await std::string {}; // #C Calls promise_type.await_transform
 
-		co_yield "Here! %1\n " + std::to_string(i); // #D Calls promise_type.return_value
+		co_yield "Here! " + std::to_string(i) + "\n"; // #D Calls promise_type.return_value
 	}
 }

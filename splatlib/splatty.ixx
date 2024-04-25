@@ -9,6 +9,7 @@ module;
 
 #include <array>
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <mdspan>
 #include <print>
@@ -172,7 +173,7 @@ export struct Splatty {
 
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 		if (std::abs(dot - 1) > 0.01) {
-			qCritical() << chat.listen(); // #H Wait for more data from the coroutine "here"
+			std::cout << chat.listen(); // #H Wait for more data from the coroutine "here"
 			generateTexture();
 
 			sortByDepth(x, y, z);
