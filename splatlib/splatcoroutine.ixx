@@ -23,15 +23,16 @@ export struct Chat {
 	struct promise_type {
 		std::string _msgOut {}, _msgIn {}; // #A Storing a value from or for the coroutine
 
-		Chat get_return_object() noexcept { return Chat { this }; }
-		std::suspend_never initial_suspend() noexcept { return {}; }
-		std::suspend_never final_suspend() noexcept { return {}; }
-		std::suspend_always yield_value(std::string msg) noexcept // #F Value from co_yield
+
+		Chat get_return_object() noexcept { return Chat { this }; }  // #C Coroutine creation
+		std::suspend_never initial_suspend() noexcept { return {}; } // #D Startup
+		std::suspend_always final_suspend() noexcept { return {}; }  // #E Ending
+		std::suspend_always yield_value(std::string msg) noexcept    // #F Value from co_yield
 		{
 			_msgOut = std::move(msg);
 			return {};
 		}
-		void return_void() noexcept {}
+		void return_value(std::string msg) noexcept { _msgOut = std::move(msg); } // #I Value from co_return
 		void unhandled_exception() noexcept {}
 
 		auto await_transform(std::string) noexcept // #G Value from co_await
@@ -88,4 +89,6 @@ export Chat Fun() // #A Wrapper type Chat containing the promise type
 
 		co_yield "Here! " + std::to_string(i) + "\n"; // #D Calls promise_type.return_value
 	}
+
+	co_return "Finished !";
 }
