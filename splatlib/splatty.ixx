@@ -49,7 +49,7 @@ export struct Splatty {
 	int texheight;
 	std::vector<unsigned int> texdata;
 	std::vector<unsigned int> depthIndex;
-	Chat chat = Fun(); // #E Creation of the coroutine
+	CountLogger log = LoggingCoroutine(); // #E Creation of the coroutine
 	Splatty(const std::filesystem::path& path)
 	{
 		std::vector<unsigned char> data = Splat::readFromFile(path);
@@ -169,11 +169,11 @@ export struct Splatty {
 
 	void setView(float x, float y, float z)
 	{
-		chat.answer("Where are you?\n"); // #G Send data into the coroutine
+		log.count(); // #G Send data into the coroutine
 
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 		if (std::abs(dot - 1) > 0.01) {
-			std::cout << chat.listen(); // #H Wait for more data from the coroutine "here"
+			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
 			generateTexture();
 
 			sortByDepth(x, y, z);

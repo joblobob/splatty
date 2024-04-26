@@ -15,79 +15,71 @@ module;
 #include <new>
 #include <string>
 #include <utility>
+
+#include <chrono>
+
 export module splat.coroutine;
 
 
 //coroutine!
-export struct Chat {
+export struct CountLogger {
 	struct promise_type {
-		std::string _msgOut {}, _msgIn {}; // #A Storing a value from or for the coroutine
+		std::string logMessage {};
 
-
-		Chat get_return_object() noexcept { return Chat { this }; }  // #C Coroutine creation
-		std::suspend_never initial_suspend() noexcept { return {}; } // #D Startup
-		std::suspend_always final_suspend() noexcept { return {}; }  // #E Ending
-		std::suspend_always yield_value(std::string msg) noexcept    // #F Value from co_yield
+		CountLogger get_return_object() noexcept { return CountLogger { this }; } // #C Coroutine creation
+		std::suspend_never initial_suspend() noexcept { return {}; }              // #D Startup
+		std::suspend_always final_suspend() noexcept { return {}; }               // #E Ending
+		std::suspend_always yield_value(std::string msg) noexcept                 // #F Value from co_yield
 		{
-			_msgOut = std::move(msg);
+			logMessage = std::move(msg);
 			return {};
 		}
-		void return_value(std::string msg) noexcept { _msgOut = std::move(msg); } // #I Value from co_return
+		void return_value(std::string msg) noexcept { logMessage = std::move(msg); } // #I Value from co_return
 		void unhandled_exception() noexcept {}
-
-		auto await_transform(std::string) noexcept // #G Value from co_await
-		{
-			struct awaiter { // #H Customized version instead of using suspend_always or suspend_never
-				promise_type& pt;
-				constexpr bool await_ready() const noexcept { return true; }
-				std::string await_resume() const noexcept { return std::move(pt._msgIn); }
-				void await_suspend(std::coroutine_handle<>) const noexcept {}
-			};
-
-			return awaiter { *this };
-		}
 	};
 
-	std::coroutine_handle<promise_type> mCoroHdl {}; // #B
+	std::coroutine_handle<promise_type> co_handle {};
 
-	explicit Chat(promise_type* p) : mCoroHdl { std::coroutine_handle<promise_type>::from_promise(*p) } {} // #C Get the handle form the promise
-	Chat(Chat&& rhs) noexcept : mCoroHdl { std::exchange(rhs.mCoroHdl, nullptr) } {}                       // #D Move only!
+	explicit CountLogger(promise_type* p) : co_handle { std::coroutine_handle<promise_type>::from_promise(*p) } {} // #C Get the handle form the promise
+	CountLogger(CountLogger&& rhs) noexcept : co_handle { std::exchange(rhs.co_handle, nullptr) } {}               // #D Move only!
 
-	~Chat() noexcept // #E Care taking, destroying the handle if needed
+	~CountLogger() noexcept // #E Care taking, destroying the handle if needed
 	{
-		if (mCoroHdl) {
-			mCoroHdl.destroy();
+		if (co_handle) {
+			co_handle.destroy();
 		}
 	}
 
-	std::string listen() // #F Activate the coroutine and wait for data.
+	void count() // activate it.
 	{
-		if (not mCoroHdl.done()) {
-			mCoroHdl.resume();
+		if (not co_handle.done()) {
+			co_handle.resume();
 		}
-		return std::move(mCoroHdl.promise()._msgOut);
 	}
 
-	void answer(std::string msg) // #G Send data to the coroutine and activate it.
+	std::string message() // #F Activate the coroutine and return the data
 	{
-		mCoroHdl.promise()._msgIn = std::move(msg);
-		if (not mCoroHdl.done()) {
-			mCoroHdl.resume();
+		if (not co_handle.done()) {
+			co_handle.resume();
 		}
+		return std::move(co_handle.promise().logMessage);
 	}
 };
 
 
 
-export Chat Fun() // #A Wrapper type Chat containing the promise type
+export CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise type
 {
-	co_yield "Hello!\n"; // #B Calls promise_type.yield_value
-
+	co_yield "Hello! I'm a counting logger\n"; // #B Calls promise_type.yield_value
+	std::chrono::steady_clock::time_point begin, end;
+	std::chrono::nanoseconds diff, last;
 	int i = 0;
-	while (i < 50) {
-		std::cout << i++ << " -- " << co_await std::string {}; // #C Calls promise_type.await_transform
-
-		co_yield "Here! " + std::to_string(i) + "\n"; // #D Calls promise_type.return_value
+	begin = std::chrono::steady_clock::now();
+	while (i < 100) {
+		diff = std::chrono::steady_clock::now() - begin - last;
+		co_yield "Count: " + std::to_string(i++) + " " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(diff).count()) +
+		    " ms\n"; // #D Calls promise_type.return_value
+		last = std::chrono::steady_clock::now() - begin;
 	}
 
 	co_return "Finished !";
