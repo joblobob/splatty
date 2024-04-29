@@ -16,6 +16,9 @@ module;
 #include <ranges>
 #include <vector>
 
+#include <chrono>
+#include <coroutine>
+
 #include <filesystem>
 
 #include <QDebug>
@@ -35,6 +38,27 @@ import splat.reader;
 // RGBA - colors (uint8)
 // IJKL - quaternion/rot (uint8)
 constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
+
+
+CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise type
+{
+	std::cout << "Hello! I'm a counting logger\n"; // #B Calls promise_type.yield_value
+	std::chrono::steady_clock::time_point begin, end;
+	std::chrono::nanoseconds diff, last;
+	int i = 0;
+	begin = std::chrono::steady_clock::now();
+	co_yield "Initialization done!";
+
+	while (i < 100) {
+		diff = std::chrono::steady_clock::now() - begin;
+		co_yield "Count: " + std::to_string(i++) + " " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(diff).count()) +
+		    " ms\n"; // #D Calls promise_type.return_value
+	}
+
+	co_return "Finished !";
+}
+
+
 
 export struct Splatty {
 	std::unique_ptr<SplatData> m_data;
@@ -170,10 +194,10 @@ export struct Splatty {
 	void setView(float x, float y, float z)
 	{
 		log.count(); // #G Send data into the coroutine
-
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 		if (std::abs(dot - 1) > 0.01) {
 			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
+
 			generateTexture();
 
 			sortByDepth(x, y, z);

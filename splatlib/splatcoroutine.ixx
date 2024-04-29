@@ -8,15 +8,7 @@ module;
 
 
 #include <coroutine>
-#include <cstdio>
-#include <exception> // std::terminate
-#include <iostream>
-#include <list>
-#include <new>
 #include <string>
-#include <utility>
-
-#include <chrono>
 
 export module splat.coroutine;
 
@@ -65,22 +57,3 @@ export struct CountLogger {
 		return std::move(co_handle.promise().logMessage);
 	}
 };
-
-
-
-export CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise type
-{
-	co_yield "Hello! I'm a counting logger\n"; // #B Calls promise_type.yield_value
-	std::chrono::steady_clock::time_point begin, end;
-	std::chrono::nanoseconds diff, last;
-	int i = 0;
-	begin = std::chrono::steady_clock::now();
-	while (i < 100) {
-		diff = std::chrono::steady_clock::now() - begin - last;
-		co_yield "Count: " + std::to_string(i++) + " " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(diff).count()) +
-		    " ms\n"; // #D Calls promise_type.return_value
-		last = std::chrono::steady_clock::now() - begin;
-	}
-
-	co_return "Finished !";
-}
