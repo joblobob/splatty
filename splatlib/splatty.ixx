@@ -44,64 +44,41 @@ CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise ty
 {
 	std::cout << "Hello! I'm a counting logger\n"; // #B Calls promise_type.yield_value
 	std::chrono::steady_clock::time_point begin, end;
-	std::chrono::nanoseconds diff, last;
 	int i = 0;
 	begin = std::chrono::steady_clock::now();
 	co_yield "Initialization done!";
-
 	while (i < 100) {
-		diff = std::chrono::steady_clock::now() - begin;
-		co_yield "Count: " + std::to_string(i++) + " " + std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(diff).count()) +
+		co_yield "Count: " + std::to_string(i++) + " " +
+		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count()) +
 		    " ms\n"; // #D Calls promise_type.return_value
 	}
 
 	co_return "Finished !";
 }
 
-
-
-export struct Splatty {
-	std::unique_ptr<SplatData> m_data;
-	std::unique_ptr<glsplat> m_gl;
-
-	int vertexCount = 0;
-
-	float lastProjX, lastProjY, lastProjZ;
-
-
-	static constexpr int texwidth = 2048;
-	int texheight;
+TextureGenerator TextureCoroutine()
+{
 	std::vector<unsigned int> texdata;
-	std::vector<unsigned int> depthIndex;
-	CountLogger log = LoggingCoroutine(); // #E Creation of the coroutine
-	Splatty(const std::filesystem::path& path)
-	{
-		std::vector<unsigned char> data = Splat::readFromFile(path);
 
-		// resize data folowwing the vertexCount
-		vertexCount = (data.size() / rowLength);
+	// Here we convert from a .splat file buffer into a texture
+	// With a little bit more foresight perhaps this texture file
+	// should have been the native format as it'd be very easy to
+	// load it into webgl.
 
-		depthIndex.resize(vertexCount + 1);
+	std::array<float, 4> rot;
+	std::array<float, 9> M;
+	std::array<float, 6> sigma;
+	int texwidth = 2048;
+	int texheight;
+	std::unique_ptr<SplatData> m_data = co_await std::unique_ptr<SplatData> {};
 
-		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-		texdata.resize(texwidth * texheight * 4 + 1);                      // 4 components per pixel (RGBA)
+	int vertexCount = (m_data->m_ucharBuffer.size() / rowLength);
 
-		m_data = std::make_unique<SplatData>(data);
-		m_gl   = std::make_unique<glsplat>(vertexCount);
-	}
+	texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
+	texdata.resize(texwidth * texheight * 4 + 1);
 
-	void generateTexture()
-	{
-		// Here we convert from a .splat file buffer into a texture
-		// With a little bit more foresight perhaps this texture file
-		// should have been the native format as it'd be very easy to
-		// load it into webgl.
-
-		std::array<float, 4> rot;
-		std::array<float, 9> M;
-		std::array<float, 6> sigma;
-
-		auto spanny = std::mdspan(m_data->m_ucharBuffer.data(), 32, m_data->m_floatBuffer.size());
+	while (true) {
+		//auto spanny = std::mdspan(m_data->m_ucharBuffer.data(), 32, m_data->m_floatBuffer.size());
 
 		for (unsigned int i : std::views::iota(0u, m_data->m_floatBuffer.size()) | std::views::stride(8)) {
 			// x, y, z from float to binary
@@ -146,10 +123,45 @@ export struct Splatty {
 			texdata[i + 6] = packHalf2x16(4 * sigma[4], 4 * sigma[5]);
 		}
 
-
-
-		m_gl->setTextureData(texdata, texwidth, texheight);
+		co_yield texdata;
 	}
+}
+
+
+
+export struct Splatty {
+	std::unique_ptr<SplatData> m_data;
+	std::unique_ptr<glsplat> m_gl;
+
+	int vertexCount = 0;
+
+	float lastProjX, lastProjY, lastProjZ;
+
+
+	static constexpr int texwidth = 2048;
+	int texheight;
+	std::vector<unsigned int> depthIndex;
+
+	CountLogger log              = LoggingCoroutine(); // #E Creation of the coroutine
+	TextureGenerator textureCoro = TextureCoroutine();
+
+	Splatty(const std::filesystem::path& path)
+	{
+		std::vector<unsigned char> data = Splat::readFromFile(path);
+
+		// resize data folowing the vertexCount
+		vertexCount = (data.size() / rowLength);
+
+		depthIndex.resize(vertexCount + 1);
+
+		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
+
+		m_data = std::make_unique<SplatData>(data);
+		m_gl   = std::make_unique<glsplat>(vertexCount);
+		textureCoro.setData(std::make_unique<SplatData>(data));
+	}
+
+	void generateTexture() { m_gl->setTextureData(textureCoro.texture(), texwidth, texheight); }
 
 	void sortByDepth(float x, float y, float z)
 	{
@@ -197,7 +209,6 @@ export struct Splatty {
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 		if (std::abs(dot - 1) > 0.01) {
 			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
-
 			generateTexture();
 
 			sortByDepth(x, y, z);
