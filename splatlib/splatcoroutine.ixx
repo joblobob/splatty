@@ -15,6 +15,7 @@ module;
 export module splat.coroutine;
 
 import splat.data;
+import splat.opengl;
 
 
 //coroutine!
@@ -65,9 +66,12 @@ export struct CountLogger {
 //coroutine 2!
 struct SplatData;
 export struct TextureGenerator {
+	glsplat* m_gl; //ptr to connect to setTextureData
+
 	struct promise_type {
 		std::vector<unsigned int> textureData {}; //what the coroutine produces
 		std::unique_ptr<SplatData> m_splatData;   //what it needs to produce
+
 
 		TextureGenerator get_return_object() noexcept { return TextureGenerator { this }; } // #C Coroutine creation
 		std::suspend_always initial_suspend() noexcept { return {}; }                       // #D Startup
@@ -107,12 +111,14 @@ export struct TextureGenerator {
 	}
 
 	void setData(std::unique_ptr<SplatData> data) { co_handle.promise().m_splatData = std::move(data); }
+	void setOpenGL(glsplat* gl) { m_gl = gl; }
 
-	std::vector<unsigned int> texture() // #F Activate the coroutine and return the data
+	void texture(int texwidth, int texheight) // #F Activate the coroutine and return the data
 	{
 		if (not co_handle.done()) {
 			co_handle.resume();
 		}
-		return std::move(co_handle.promise().textureData);
+
+		m_gl->setTextureData(co_handle.promise().textureData, texwidth, texheight);
 	}
 };

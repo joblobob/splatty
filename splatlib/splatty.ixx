@@ -158,10 +158,11 @@ export struct Splatty {
 
 		m_data = std::make_unique<SplatData>(data);
 		m_gl   = std::make_unique<glsplat>(vertexCount);
+
 		textureCoro.setData(std::make_unique<SplatData>(data));
+		textureCoro.setOpenGL(m_gl.get());
 	}
 
-	void generateTexture() { m_gl->setTextureData(textureCoro.texture(), texwidth, texheight); }
 
 	void sortByDepth(float x, float y, float z)
 	{
@@ -209,7 +210,8 @@ export struct Splatty {
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 		if (std::abs(dot - 1) > 0.01) {
 			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
-			generateTexture();
+
+			textureCoro.texture(texwidth, texheight); // ask the coroutine to generate new data
 
 			sortByDepth(x, y, z);
 
