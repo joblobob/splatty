@@ -8,8 +8,10 @@ module;
 
 
 #include <coroutine>
+#include <future>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 export module splat.coroutine;
@@ -116,7 +118,7 @@ export struct TextureGenerator {
 	void texture(int texwidth, int texheight) // #F Activate the coroutine and return the data
 	{
 		if (not co_handle.done()) {
-			co_handle.resume();
+			std::jthread t([this] { co_handle.resume(); });
 		}
 
 		m_gl->setTextureData(co_handle.promise().textureData, texwidth, texheight);

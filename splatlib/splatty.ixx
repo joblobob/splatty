@@ -211,7 +211,11 @@ export struct Splatty {
 		if (std::abs(dot - 1) > 0.01) {
 			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
 
+
+			std::chrono::steady_clock::time_point begin;
+			begin = std::chrono::steady_clock::now();
 			textureCoro.texture(texwidth, texheight); // ask the coroutine to generate new data
+			std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin);
 
 			sortByDepth(x, y, z);
 
