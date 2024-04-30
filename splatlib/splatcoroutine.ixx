@@ -70,6 +70,8 @@ struct SplatData;
 export struct TextureGenerator {
 	glsplat* m_gl; //ptr to connect to setTextureData
 
+	std::thread myThread;
+
 	struct promise_type {
 		std::vector<unsigned int> textureData {}; //what the coroutine produces
 		std::unique_ptr<SplatData> m_splatData;   //what it needs to produce
@@ -102,11 +104,13 @@ export struct TextureGenerator {
 	std::coroutine_handle<promise_type> co_handle {};
 
 	explicit TextureGenerator(promise_type* p) :
-	    co_handle { std::coroutine_handle<promise_type>::from_promise(*p) } {}                                 // #C Get the handle form the promise
+	    myThread(), co_handle { std::coroutine_handle<promise_type>::from_promise(*p) } // #C Get the handle form the promise
+	{}
 	TextureGenerator(TextureGenerator&& rhs) noexcept : co_handle { std::exchange(rhs.co_handle, nullptr) } {} // #D Move only!
 
 	~TextureGenerator() noexcept // #E Care taking, destroying the handle if needed
 	{
+		myThread.join();
 		if (co_handle) {
 			co_handle.destroy();
 		}
@@ -117,8 +121,12 @@ export struct TextureGenerator {
 
 	void texture(int texwidth, int texheight) // #F Activate the coroutine and return the data
 	{
-		if (not co_handle.done()) {
-			std::jthread t([this] { co_handle.resume(); });
+		if (!myThread.joinable()) {
+			myThread = std::move(std::thread(([this] {
+				if (not co_handle.done()) {
+					co_handle.resume();
+				}
+			})));
 		}
 
 		m_gl->setTextureData(co_handle.promise().textureData, texwidth, texheight);
