@@ -141,6 +141,7 @@ export struct Splatty {
 	static constexpr int texwidth = 2048;
 	int texheight;
 	std::vector<unsigned int> depthIndex;
+	std::vector<unsigned int> texdata;
 
 	CountLogger log              = LoggingCoroutine(); // #E Creation of the coroutine
 	TextureGenerator textureCoro = TextureCoroutine();
@@ -155,12 +156,12 @@ export struct Splatty {
 		depthIndex.resize(vertexCount + 1);
 
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-
+		texdata.resize(texwidth * texheight * 4 + 1);
 		m_data = std::make_unique<SplatData>(data);
 		m_gl   = std::make_unique<glsplat>(vertexCount);
 
 		textureCoro.setData(std::make_unique<SplatData>(data));
-		textureCoro.setOpenGL(m_gl.get());
+		textureCoro.generateTexture();
 	}
 
 
@@ -207,15 +208,15 @@ export struct Splatty {
 	void setView(float x, float y, float z)
 	{
 		log.count(); // #G Send data into the coroutine
+
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
+
+		texdata = textureCoro.texture(); // ask the coroutine to generate new data
+		if (texdata.size() != 0)
+			m_gl->setTextureData(texdata, texwidth, texheight);
+
 		if (std::abs(dot - 1) > 0.01) {
 			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
-
-
-			std::chrono::steady_clock::time_point begin;
-			begin = std::chrono::steady_clock::now();
-			textureCoro.texture(texwidth, texheight); // ask the coroutine to generate new data
-			std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin);
 
 			sortByDepth(x, y, z);
 
@@ -223,7 +224,6 @@ export struct Splatty {
 			lastProjY = y;
 			lastProjZ = z;
 		}
-
 
 		m_gl->viewChanged();
 	}

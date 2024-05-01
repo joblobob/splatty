@@ -17,7 +17,6 @@ module;
 export module splat.coroutine;
 
 import splat.data;
-import splat.opengl;
 
 
 //coroutine!
@@ -68,8 +67,6 @@ export struct CountLogger {
 //coroutine 2!
 struct SplatData;
 export struct TextureGenerator {
-	glsplat* m_gl; //ptr to connect to setTextureData
-
 	std::thread myThread;
 
 	struct promise_type {
@@ -117,9 +114,8 @@ export struct TextureGenerator {
 	}
 
 	void setData(std::unique_ptr<SplatData> data) { co_handle.promise().m_splatData = std::move(data); }
-	void setOpenGL(glsplat* gl) { m_gl = gl; }
 
-	void texture(int texwidth, int texheight) // #F Activate the coroutine and return the data
+	void generateTexture() // #F Activate the coroutine and
 	{
 		if (!myThread.joinable()) {
 			myThread = std::move(std::thread(([this] {
@@ -128,7 +124,10 @@ export struct TextureGenerator {
 				}
 			})));
 		}
+	}
 
-		m_gl->setTextureData(co_handle.promise().textureData, texwidth, texheight);
+	std::vector<unsigned int> texture() //  return the data
+	{
+		return std::move(co_handle.promise().textureData);
 	}
 };
