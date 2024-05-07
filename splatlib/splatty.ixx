@@ -9,7 +9,6 @@ module;
 
 #include <array>
 #include <cmath>
-#include <iostream>
 #include <limits>
 #include <mdspan>
 #include <print>
@@ -22,6 +21,7 @@ module;
 #include <filesystem>
 
 #include <QDebug>
+#include <optional>
 
 export module splatty;
 
@@ -42,7 +42,7 @@ constexpr int rowLength = 3 * 4 + 3 * 4 + 4 + 4;
 
 CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise type
 {
-	std::cout << "Hello! I'm a counting logger\n"; // #B Calls promise_type.yield_value
+	std::println("{}", "Hello! I'm a counting logger");
 	std::chrono::steady_clock::time_point begin, end;
 	int i = 0;
 	begin = std::chrono::steady_clock::now();
@@ -50,7 +50,7 @@ CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise ty
 	while (i < 100) {
 		co_yield "Count: " + std::to_string(i++) + " " +
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count()) +
-		    " ms\n"; // #D Calls promise_type.return_value
+		    " ms"; // #D Calls promise_type.return_value
 	}
 
 	co_return "Finished !";
@@ -141,7 +141,6 @@ export struct Splatty {
 	static constexpr int texwidth = 2048;
 	int texheight;
 	std::vector<unsigned int> depthIndex;
-	std::vector<unsigned int> texdata;
 
 	CountLogger log              = LoggingCoroutine(); // #E Creation of the coroutine
 	TextureGenerator textureCoro = TextureCoroutine();
@@ -156,9 +155,8 @@ export struct Splatty {
 		depthIndex.resize(vertexCount + 1);
 
 		texheight = std::ceil((float)(2 * vertexCount) / (float)texwidth); // Set to your desired height
-		texdata.resize(texwidth * texheight * 4 + 1);
-		m_data = std::make_unique<SplatData>(data);
-		m_gl   = std::make_unique<glsplat>(vertexCount);
+		m_data    = std::make_unique<SplatData>(data);
+		m_gl      = std::make_unique<glsplat>(vertexCount);
 
 		textureCoro.setData(std::make_unique<SplatData>(data));
 		textureCoro.generateTexture();
@@ -211,12 +209,13 @@ export struct Splatty {
 
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 
-		texdata = textureCoro.texture(); // ask the coroutine to generate new data
-		if (texdata.size() != 0)
-			m_gl->setTextureData(texdata, texwidth, texheight);
+		std::optional<std::vector<unsigned int> > texdata = textureCoro.texture(); // ask the coroutine to generate new data
+		if (texdata.has_value()) {
+			m_gl->setTextureData(texdata.value(), texwidth, texheight);
+		}
 
 		if (std::abs(dot - 1) > 0.01) {
-			std::cout << log.message(); // #H Wait for more data from the coroutine "here"
+			std::println("{}", log.message()); // #H Wait for more data from the coroutine "here"
 
 			sortByDepth(x, y, z);
 

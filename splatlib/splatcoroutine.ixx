@@ -10,6 +10,7 @@ module;
 #include <coroutine>
 #include <future>
 #include <memory>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -126,8 +127,11 @@ export struct TextureGenerator {
 		}
 	}
 
-	std::vector<unsigned int> texture() //  return the data
+	std::optional<std::vector<unsigned int> > texture() //  return the data
 	{
+		if (co_handle.promise().textureData.size() == 0)
+			return std::nullopt;
+
 		return std::move(co_handle.promise().textureData);
 	}
 };
