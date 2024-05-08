@@ -21,7 +21,7 @@ module;
 #include <filesystem>
 
 #include <QDebug>
-#include <optional>
+#include <expected>
 
 export module splatty;
 
@@ -209,8 +209,8 @@ export struct Splatty {
 
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 
-		std::optional<std::vector<unsigned int> > texdata = textureCoro.texture(); // ask the coroutine to generate new data
-		if (texdata.has_value()) {
+		std::expected<std::vector<unsigned int>, TextureGenerator::TextureStatus> texdata = textureCoro.texture(); // ask the coroutine to generate new data
+		if (texdata.error() != TextureGenerator::TextureStatus::NotReady) {
 			m_gl->setTextureData(texdata.value(), texwidth, texheight);
 		}
 

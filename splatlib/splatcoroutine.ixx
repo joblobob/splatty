@@ -8,9 +8,9 @@ module;
 
 
 #include <coroutine>
+#include <expected>
 #include <future>
 #include <memory>
-#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -126,11 +126,18 @@ export struct TextureGenerator {
 			})));
 		}
 	}
-
-	std::optional<std::vector<unsigned int> > texture() //  return the data
+	enum class TextureStatus
 	{
+		NotReady,
+		NoData
+	};
+	std::expected<std::vector<unsigned int>, TextureGenerator::TextureStatus> texture() //  return the data
+	{
+		if (co_handle.done())
+			return std::unexpected(TextureStatus::NoData);
+
 		if (co_handle.promise().textureData.size() == 0)
-			return std::nullopt;
+			return std::unexpected(TextureStatus::NotReady);
 
 		return std::move(co_handle.promise().textureData);
 	}
