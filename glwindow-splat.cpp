@@ -18,8 +18,8 @@ void GLWindowSplat::worldInteraction(std::mdspan<float, std::extents<std::size_t
 {
 	invertMatrix(view);
 
-	rotateMatrix(view, 0.01f, 0.0f, -0.2f, 0.0f);
-	translateMatrix(view, 0.05, 0.05, -0.5);
+	rotateMatrix(view, 0.002f, 0.0f, -0.04f, 0.0f);
+	translateMatrix(view, 0.01, 0.01, -0.1);
 
 	invertMatrix(view);
 }
