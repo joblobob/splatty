@@ -131,13 +131,13 @@ export struct TextureGenerator {
 		NotReady,
 		NoData
 	};
-	std::expected<std::vector<unsigned int>, TextureGenerator::TextureStatus> texture() //  return the data
+	std::optional<std::vector<unsigned int> > texture() //  return the data
 	{
 		if (co_handle.done())
-			return std::unexpected(TextureStatus::NoData);
+			return std::nullopt;
 
 		if (co_handle.promise().textureData.size() == 0)
-			return std::unexpected(TextureStatus::NotReady);
+			return std::nullopt;
 
 		return std::move(co_handle.promise().textureData);
 	}

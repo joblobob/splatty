@@ -20,6 +20,7 @@ export module splat.opengl;
 import splat.math;
 import splat.shaders;
 
+//static std::array<float, 16> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 static std::array<float, 16> defaultViewMatrix = { 0.47, 0.04, 0.88, 0, -0.11, 0.99, 0.02, 0, -0.88, -0.11, 0.47, 0, 0.07, 0.03, 6.55, 1 };
 
 export std::mdspan<float, std::extents<std::size_t, 4, 4> > viewMatrix(defaultViewMatrix.data(), 4, 4);

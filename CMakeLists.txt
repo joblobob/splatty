@@ -13,7 +13,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-add_executable(splatty WIN32
+add_executable(splatty 
     glwindow-splat.h glwindow-splat.cpp
     main.cpp
 )

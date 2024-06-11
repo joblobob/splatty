@@ -47,7 +47,7 @@ CountLogger LoggingCoroutine() // #A Wrapper type Chat containing the promise ty
 	int i = 0;
 	begin = std::chrono::steady_clock::now();
 	co_yield "Initialization done!";
-	while (i < 100) {
+	while (i < 500) {
 		co_yield "Count: " + std::to_string(i++) + " " +
 		    std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count()) +
 		    " ms"; // #D Calls promise_type.return_value
@@ -209,13 +209,14 @@ export struct Splatty {
 
 		float dot = lastProjX * x + lastProjY * y + lastProjZ * z;
 
-		std::expected<std::vector<unsigned int>, TextureGenerator::TextureStatus> texdata = textureCoro.texture(); // ask the coroutine to generate new data
-		if (texdata.error() != TextureGenerator::TextureStatus::NotReady) {
-			m_gl->setTextureData(texdata.value(), texwidth, texheight);
-		}
 
 		if (std::abs(dot - 1) > 0.01) {
 			std::println("{}", log.message()); // #H Wait for more data from the coroutine "here"
+
+			std::optional<std::vector<unsigned int> > texdata = textureCoro.texture(); // ask the coroutine to generate new data
+			if (texdata.has_value()) {
+				m_gl->setTextureData(texdata.value(), texwidth, texheight);
+			}
 
 			sortByDepth(x, y, z);
 
