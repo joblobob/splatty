@@ -36,15 +36,13 @@ bool GLWindowSplat::event(QEvent* event)
 		invertMatrix(viewMatrix);
 		std::println("{}{}", "key!", ke->key());
 		if (ke->key() == Qt::Key_Up) {
-			translateMatrix(viewMatrix, 0, 0, 0.5);
-
-
+			translateMatrix(viewMatrix, 0, 0, 0.25);
 		} else if (ke->key() == Qt::Key_Down) {
-			translateMatrix(viewMatrix, 0, 0, -0.5);
+			translateMatrix(viewMatrix, 0, 0, -0.25);
 		} else if (ke->key() == Qt::Key_Left) {
-			rotateMatrix(viewMatrix, 0.1, -0.05, 0, 0);
+			translateMatrix(viewMatrix, -0.25, 0, 0);
 		} else if (ke->key() == Qt::Key_Right) {
-			rotateMatrix(viewMatrix, 0.1, 0.05, 0, 0);
+			translateMatrix(viewMatrix, 0.25, 0, 0);
 		}
 		invertMatrix(viewMatrix);
 		return true;
