@@ -18,18 +18,13 @@ add_executable(splatty WIN32
     main.cpp
 )
 
-#add_library(gllib)
-#target_sources(gllib
-#  PUBLIC
-#    FILE_SET cxx_modules TYPE CXX_MODULES FILES ""
-#    
-#)
+add_subdirectory(splatlib)
 
 target_link_libraries(splatty PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::OpenGL
-   # gllib
+    splatlib
 )
 
 set(INSTALL_EXAMPLEDIR "examples/opengl/splatty")
